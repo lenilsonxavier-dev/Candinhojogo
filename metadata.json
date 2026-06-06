@@ -1,0 +1,6 @@
+{
+  "name": "Candinho Challenge",
+  "description": "Candinho's Colorful Quest is a vibrant adventure game where players help Candinho collect paints, defeat enemies, and complete a canvas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
