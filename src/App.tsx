@@ -864,13 +864,26 @@ export default function App() {
         const monsterTimeOffset = time * 8 + monster.x * 0.05;
         const bounceHeight = Math.abs(Math.sin(monsterTimeOffset)) * 4;
         if (monsterImg.current) {
+          ctx.save();
+          // Find center for mirroring
+          const cx = monster.x + monster.width / 2;
+          ctx.translate(cx, 0);
+
+          // If moving left (vx < 0), flip horizontally.
+          // If vx > 0, render normally (default image faces right).
+          if (monster.vx < 0) {
+            ctx.scale(-1, 1);
+          }
+
+          const drawX = -(monster.width / 2 + 20);
           ctx.drawImage(
             monsterImg.current,
-            monster.x - 20,
+            drawX,
             monster.y - 20 - bounceHeight,
             monster.width + 40,
             monster.height + 40
           );
+          ctx.restore();
         } else {
           ctx.fillStyle = monster.color;
           ctx.beginPath();
@@ -1114,11 +1127,29 @@ export default function App() {
           monster.maxX = plat.x + plat.width;
           monster.y = plat.y - monster.height;
         }
+      } else {
+        // Ground patrol covering the entire scenario width
+        monster.minX = 20;
+        monster.maxX = Et - 20;
       }
 
+      // 🧠 Seeking & hunting AI for Candinho
+      // Calculate chase direction towards Candinho
+      const dx = player.x - monster.x;
+      const faceDir = dx > 0 ? 1 : -1;
+      
+      // Establish a normal, fully controlled chasing speed
+      const baseChaseSpeed = monster.platformIdx !== undefined ? 1.5 : 2.5;
+      monster.vx = faceDir * baseChaseSpeed;
+
+      // Apply movement
       monster.x += monster.vx;
-      if (monster.x <= monster.minX || monster.x + monster.width >= monster.maxX) {
-        monster.vx *= -1;
+
+      // Clamp to patrol/scenario boundaries
+      if (monster.x < monster.minX) {
+        monster.x = monster.minX;
+      } else if (monster.x + monster.width > monster.maxX) {
+        monster.x = monster.maxX - monster.width;
       }
 
       // Smudge ink trail sliding under slide monsters
