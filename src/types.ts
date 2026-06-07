@@ -73,3 +73,12 @@ export interface Particle {
 
 export type GameState = "opening" | "playing" | "gameover" | "victory";
 
+export function getAssetPath(path: string): string {
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const baseUrl = (import.meta as any).env?.BASE_URL || '/';
+  if (baseUrl === './' || baseUrl === '.') {
+    return cleanPath;
+  }
+  return baseUrl.endsWith('/') ? `${baseUrl}${cleanPath}` : `${baseUrl}/${cleanPath}`;
+}
+

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { getAssetPath } from "../types";
 
 interface OpeningScreenProps {
   onStart: () => void;
@@ -17,10 +18,12 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ onStart }) => {
 
     // Preload sprites
     const candinhoImg = new Image();
-    candinhoImg.src = "/assets/candinho-correndo-ZKC8bzhz.png";
+    candinhoImg.crossOrigin = "anonymous";
+    candinhoImg.src = "https://i.imgur.com/63Woy0z.png";
 
     const monsterImg = new Image();
-    monsterImg.src = "/assets/monstrinho-B9QJWbS4.png";
+    monsterImg.crossOrigin = "anonymous";
+    monsterImg.src = "https://i.imgur.com/21iZsMM.png";
 
     const bucketColors = ["#ff4081", "#ffd54f", "#4fc3f7", "#ba68c8", "#ff5722"];
 
@@ -259,7 +262,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ onStart }) => {
 
         {/* Briefing Box */}
         <div className="max-w-2xl bg-[#0d0d1f]/80 px-6 py-4 rounded-2xl border border-accent/10 mb-6 text-sm md:text-base text-gray-200 leading-relaxed font-sans">
-          🎨 ajude o Candinho a recolher tintas, passando pelos monstros removedores de cor e pinte as obras históricas de Candido Portinari ao fim de cada fase!
+          🎨 ajude o Candinho a recolher tintas, passando pelos monstros removedores de cor e pinte as obras históricas de Cândido Portinari ao fim de cada fase!
         </div>
 
         {/* Action Button */}

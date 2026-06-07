@@ -1,14 +1,14 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { OpeningScreen } from "./components/OpeningScreen";
 import { GameOverOverlay } from "./components/GameOverOverlay";
-import { GameState, Level, Player, Platform, Paint, Monster, Particle } from "./types";
+import { GameState, Level, Player, Platform, Paint, Monster, Particle, getAssetPath } from "./types";
 
 const portinari1Url = "https://i.imgur.com/UxHnz1J.jpg";
 const portinari2Url = "https://i.imgur.com/GnCo524.jpg";
 const portinari3Url = "https://i.imgur.com/VZH7ezB.jpg";
 const portinari4Url = "https://i.imgur.com/fRrjPu4.jpg";
 
-// Verified direct high-res images from Google Arts & Culture for Candido Portinari masterpieces
+// Verified direct high-res images from Google Arts & Culture for Cândido Portinari masterpieces
 const chorinhoUrl = "https://lh3.googleusercontent.com/ci/AL18g_Q1NenEUCYAuqideiggOhD6wbwyzvWHXI91ZYjr7cz9OCmsOWVm02X0z8RA19VbYSNmzpauDQU=s1200";
 const namoradosUrl = "https://lh3.googleusercontent.com/ci/AL18g_TQeaNMpSkFkC6H6z8iMiZXn-rjYxymo6XMGzcCP3vIlXsDuLkZy-fOUy0igS-P7oDcRJX5IA=s1200";
 const baianaUrl = "https://lh3.googleusercontent.com/ci/AL18g_SoHZLRc-1xyHJma3EnaMPvrigdSTCeLH5KrnyUFr6844kaJXzg9IqIeXX7Yi4ZvRBH0pupz1Kx=s1200";
@@ -223,7 +223,8 @@ function useGameImages() {
 
   useEffect(() => {
     const pImg = new Image();
-    pImg.src = "/assets/candinho-correndo-ZKC8bzhz.png";
+    pImg.crossOrigin = "anonymous";
+    pImg.src = "https://i.imgur.com/63Woy0z.png";
     pImg.onload = () => {
       playerImgRef.current = pImg;
       const flippedCanvas = document.createElement("canvas");
@@ -240,14 +241,15 @@ function useGameImages() {
     };
 
     const mImg = new Image();
-    mImg.src = "/assets/monstrinho-B9QJWbS4.png";
+    mImg.crossOrigin = "anonymous";
+    mImg.src = "https://i.imgur.com/21iZsMM.png";
     mImg.onload = () => {
       monsterImgRef.current = mImg;
       checkLoaded();
     };
 
     const bImg = new Image();
-    bImg.src = "/assets/game-background-new.png";
+    bImg.src = getAssetPath("assets/game-background-new.png");
     bImg.onload = () => {
       bgImgRef.current = bImg;
       checkLoaded();
@@ -360,7 +362,7 @@ function useBackgroundTheme() {
 
   const play = useCallback(() => {
     if (!audioRef.current) {
-      const audio = new Audio("/candinhotema.mp3");
+      const audio = new Audio(getAssetPath("candinhotema.mp3"));
       audio.loop = true;
       audio.volume = 0.4;
       audioRef.current = audio;
@@ -386,7 +388,7 @@ function useSounds() {
 
   const playGameOver = useCallback(() => {
     if (!gameOverAudioRef.current) {
-      const audio = new Audio("/candingameover.mp3");
+      const audio = new Audio(getAssetPath("candingameover.mp3"));
       audio.volume = 0.6;
       gameOverAudioRef.current = audio;
     }
@@ -396,7 +398,7 @@ function useSounds() {
 
   const playPoint = useCallback(() => {
     if (!pointAudioRef.current) {
-      const audio = new Audio("/pontocandinho.mp3");
+      const audio = new Audio(getAssetPath("pontocandinho.mp3"));
       audio.volume = 0.5;
       pointAudioRef.current = audio;
     }

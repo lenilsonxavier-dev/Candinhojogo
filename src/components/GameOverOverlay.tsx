@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { getAssetPath } from "../types";
 
 interface GameOverOverlayProps {
   onRestart: () => void;
@@ -17,7 +18,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
 
   useEffect(() => {
     if (!victory) return;
-    const audio = new Audio("/assets/vitoriapackcandino-BOqSYP0I.mp3");
+    const audio = new Audio(getAssetPath("assets/vitoriapackcandino-BOqSYP0I.mp3"));
     audio.volume = 0.8;
     victoryAudioRef.current = audio;
     audio.play().catch(() => {});
@@ -33,7 +34,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
         {victory ? (
           <>
             <img
-              src="/assets/candinho-vitoria-CfuzTwaO.jpg"
+              src={getAssetPath("assets/candinho-vitoria-CfuzTwaO.jpg")}
               alt="Candinho vitorioso"
               className="w-48 h-48 md:w-64 md:h-64 object-cover rounded-2xl mx-auto mb-4 border-2 border-accent shadow-lg"
             />
