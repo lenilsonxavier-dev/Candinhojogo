@@ -89,7 +89,13 @@ function Ki(level: number): Level {
     );
     monsters.push(
       { x: 600, y: Ve - te, width: je, height: te, vx: 2.5, color: "#880088", minX: 480, maxX: 880 },
-      { x: 1100, y: Ve - te, width: je, height: te, vx: 3, color: "#880088", minX: 920, maxX: 1340 }
+      { x: 1100, y: Ve - te, width: je, height: te, vx: 3, color: "#880088", minX: 920, maxX: 1340 },
+      { x: 1530, y: Ve - te, width: je, height: te, vx: 2, color: "#9c27b0", minX: 1360, maxX: 1750 },
+      { x: 280, y: 780 - te, width: je, height: te, vx: 1.2, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 1 },
+      { x: 640, y: 640 - te, width: je, height: te, vx: 1.4, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 },
+      { x: 1000, y: 500 - te, width: je, height: te, vx: 1.6, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 3 },
+      { x: 420, y: 480 - te, width: je, height: te, vx: 1.5, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 5 },
+      { x: 1380, y: 360 - te, width: je, height: te, vx: 1.3, color: "#e91e63", minX: 0, maxX: 0, platformIdx: 4 }
     );
   } else if (level === 2) {
     platforms.push(
@@ -356,58 +362,394 @@ function useGameImages() {
   };
 }
 
-// Hook to play Background Theme Music on Loop
-function useBackgroundTheme() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+class RetroAudioEngine {
+  private ctx: AudioContext | null = null;
+  private musicInterval: any = null;
+  private isMusicPlaying = false;
+  private currentStep = 0;
 
-  const play = useCallback(() => {
-    if (!audioRef.current) {
-      const audio = new Audio(getAssetPath("candinhotema.mp3"));
-      audio.loop = true;
-      audio.volume = 0.4;
-      audioRef.current = audio;
+  // Melody: Cheerful arcade major C scale arpeggios
+  private melody = [
+    261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 392.00, 523.25,
+    349.23, 440.00, 523.25, 698.46, 523.25, 440.00, 523.25, 698.46,
+    392.00, 493.88, 587.33, 783.99, 587.33, 493.88, 587.33, 783.99,
+    523.25, 659.25, 783.99, 1046.50, 783.99, 659.25, 523.25, 392.00
+  ];
+
+  private bassline = [
+    130.81, 130.81, 130.81, 130.81,
+    174.61, 174.61, 174.61, 174.61,
+    196.00, 196.00, 196.00, 196.00,
+    130.81, 130.81, 130.81, 130.81
+  ];
+
+  init() {
+    if (!this.ctx) {
+      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        this.ctx = new AudioContextClass();
+      }
     }
-    audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => {});
+    if (this.ctx && this.ctx.state === "suspended") {
+      this.ctx.resume().catch(() => {});
+    }
+  }
+
+  playTheme() {
+    this.init();
+    if (this.isMusicPlaying) return;
+    this.isMusicPlaying = true;
+    this.currentStep = 0;
+
+    const tempoMs = 155; // ms per beat
+    this.musicInterval = setInterval(() => {
+      this.playStep();
+    }, tempoMs);
+  }
+
+  stopTheme() {
+    this.isMusicPlaying = false;
+    if (this.musicInterval) {
+      clearInterval(this.musicInterval);
+      this.musicInterval = null;
+    }
+  }
+
+  private playStep() {
+    if (!this.ctx || this.ctx.state === "suspended") return;
+    const now = this.ctx.currentTime;
+
+    // Melody voice (Triangle-wave, cozy pure retro sound)
+    const melodyFreq = this.melody[this.currentStep % this.melody.length];
+    if (melodyFreq) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(melodyFreq, now);
+
+      // Low volume for gentle BG music
+      gain.gain.setValueAtTime(0.045, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+
+    // Bassline (Buzzing 8-bit Sawtooth wave) on every 4 steps
+    if (this.currentStep % 4 === 0) {
+      const bassFreq = this.bassline[Math.floor(this.currentStep / 4) % this.bassline.length];
+      if (bassFreq) {
+        const oscBass = this.ctx.createOscillator();
+        const gainBass = this.ctx.createGain();
+
+        oscBass.type = "sawtooth";
+        // Convert to double bass octave
+        oscBass.frequency.setValueAtTime(bassFreq * 0.5, now);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(220, now);
+
+        gainBass.gain.setValueAtTime(0.05, now);
+        gainBass.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        oscBass.connect(filter);
+        filter.connect(gainBass);
+        gainBass.connect(this.ctx.destination);
+        oscBass.start(now);
+        oscBass.stop(now + 0.52);
+      }
+    }
+
+    this.currentStep++;
+  }
+
+  // Pure dynamic 8-bit sound effects (no file load, instant, latency-free):
+  playPoint() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "triangle";
+    // Super Mario Coin sound style pitch jump
+    osc.frequency.setValueAtTime(987.77, now); // B5
+    osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+
+  playAura() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Rising sci-fi frequency laser chime!
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.5);
+
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.6);
+
+    // Complementary crystal ring
+    setTimeout(() => {
+      if (!this.ctx) return;
+      const ringNow = this.ctx.currentTime;
+      const oscRing = this.ctx.createOscillator();
+      const gainRing = this.ctx.createGain();
+      oscRing.type = "triangle";
+      oscRing.frequency.setValueAtTime(1567.98, ringNow); // G6
+      gainRing.gain.setValueAtTime(0.12, ringNow);
+      gainRing.gain.exponentialRampToValueAtTime(0.001, ringNow + 0.3);
+      oscRing.connect(gainRing);
+      gainRing.connect(this.ctx.destination);
+      oscRing.start(ringNow);
+      oscRing.stop(ringNow + 0.35);
+    }, 120);
+  }
+
+  playLoss() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Sad descending retro boom
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(240, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.5);
+
+    gain.gain.setValueAtTime(0.24, now);
+    gain.gain.linearRampToValueAtTime(0.1, now + 0.25);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.6);
+
+    // Noise crackle
+    const sampleRate = this.ctx.sampleRate;
+    const bufferSize = sampleRate * 0.45;
+    const buffer = this.ctx.createBuffer(1, bufferSize, sampleRate);
+    const channelData = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      channelData[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(350, now);
+    filter.frequency.exponentialRampToValueAtTime(80, now + 0.4);
+
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.15, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.ctx.destination);
+
+    noise.start(now);
+    noise.stop(now + 0.45);
+  }
+
+  playNextLevel() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Rising high-octave happy chimes (C5, E5, G5, C6)
+    const pitches = [523.25, 659.25, 783.99, 1046.50];
+    pitches.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+      gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.32);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.08);
+      osc.stop(now + idx * 0.08 + 0.35);
+    });
+  }
+
+  playGameOver() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Mournful falling retro slide
+    const notes = [293.66, 261.63, 220.00, 146.83]; // D4, C4, A3, D3
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(freq, now + idx * 0.18);
+      if (idx === notes.length - 1) {
+        osc.frequency.linearRampToValueAtTime(40, now + idx * 0.18 + 0.6);
+      }
+
+      gain.gain.setValueAtTime(0.2, now + idx * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.18 + 0.5);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.18);
+      osc.stop(now + idx * 0.18 + 0.65);
+    });
+  }
+
+  playVictory() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Famous retro fanfarra (C5, G4, C5, E5, G5, C6)
+    const notes = [
+      { f: 523.25, d: 0.12 }, // C5
+      { f: 392.00, d: 0.12 }, // G4
+      { f: 523.25, d: 0.12 }, // C5
+      { f: 659.25, d: 0.12 }, // E5
+      { f: 783.99, d: 0.20 }, // G5
+      { f: 1046.50, d: 0.60 } // C6
+    ];
+
+    let cumTime = 0;
+    notes.forEach((note) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(note.f, now + cumTime);
+
+      gain.gain.setValueAtTime(0.18, now + cumTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + cumTime + note.d);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now + cumTime);
+      osc.stop(now + cumTime + note.d);
+
+      cumTime += note.d + 0.04;
+    });
+  }
+}
+
+// Global static audio synthesizer to avoid double sound initialization context blocks
+const globalRetroAudio = new RetroAudioEngine();
+
+// Auto-unlock Web Audio context on mouse click or first keyboard touch to satisfy iOS and modern browsers Chrome/Safari restrictions
+if (typeof window !== "undefined") {
+  const unlockAudio = () => {
+    globalRetroAudio.init();
+    window.removeEventListener("click", unlockAudio);
+    window.removeEventListener("keydown", unlockAudio);
+    window.removeEventListener("touchstart", unlockAudio);
+  };
+  window.addEventListener("click", unlockAudio);
+  window.addEventListener("keydown", unlockAudio);
+  window.addEventListener("touchstart", unlockAudio);
+}
+
+// Hook to play Background Theme Music on Loop using the 8-bit retro synthesizer
+function useBackgroundTheme() {
+  const play = useCallback(() => {
+    globalRetroAudio.playTheme();
   }, []);
 
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
+    globalRetroAudio.stopTheme();
   }, []);
 
   return { play, stop };
 }
 
-// Hook to play Point and GameOver alert sounds
+// Hook to play point collections and retro game state sounds
 function useSounds() {
-  const gameOverAudioRef = useRef<HTMLAudioElement | null>(null);
-  const pointAudioRef = useRef<HTMLAudioElement | null>(null);
-
   const playGameOver = useCallback(() => {
-    if (!gameOverAudioRef.current) {
-      const audio = new Audio(getAssetPath("candingameover.mp3"));
-      audio.volume = 0.6;
-      gameOverAudioRef.current = audio;
-    }
-    gameOverAudioRef.current.currentTime = 0;
-    gameOverAudioRef.current.play().catch(() => {});
+    globalRetroAudio.playGameOver();
   }, []);
 
   const playPoint = useCallback(() => {
-    if (!pointAudioRef.current) {
-      const audio = new Audio(getAssetPath("pontocandinho.mp3"));
-      audio.volume = 0.5;
-      pointAudioRef.current = audio;
-    }
-    pointAudioRef.current.currentTime = 0;
-    pointAudioRef.current.play().catch(() => {});
+    globalRetroAudio.playPoint();
   }, []);
 
-  return { playGameOver, playPoint };
+  const playAura = useCallback(() => {
+    globalRetroAudio.playAura();
+  }, []);
+
+  const playLoss = useCallback(() => {
+    globalRetroAudio.playLoss();
+  }, []);
+
+  const playNextLevel = useCallback(() => {
+    globalRetroAudio.playNextLevel();
+  }, []);
+
+  const playVictory = useCallback(() => {
+    globalRetroAudio.playVictory();
+  }, []);
+
+  return { playGameOver, playPoint, playAura, playLoss, playNextLevel, playVictory };
 }
+
+const completedMasterpieces: Record<number, { title: string; image: string; year: string; description: string }> = {
+  1: {
+    title: "Meninos Soltando Pipas",
+    image: portinari1Url,
+    year: "1947",
+    description: "Essa linda tela mostra as crianças livres brincando de empinar coloridas pipas sob o sol alegre de Brodowski!"
+  },
+  2: {
+    title: "Futebol em Brodowski",
+    image: portinari2Url,
+    year: "1935",
+    description: "Mostra a pura alegria das crianças jogando futebol de pé descalço no campinho de terra batida!"
+  },
+  3: {
+    title: "O Lavrador de Café",
+    image: portinari3Url,
+    year: "1934",
+    description: "A obra mais famosa de Cândido Portinari, homenageando com muito respeito e força o trabalhador brasileiro das plantações de café."
+  },
+  4: {
+    title: "A Esticada",
+    image: portinari4Url,
+    year: "1940",
+    description: "Demonstra o folclore e brincadeiras tradicionais que Portinari amava retratar, cheias de movimento e ritmo."
+  }
+};
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -415,6 +757,10 @@ export default function App() {
   const [lives, setLives] = useState<number>(Gi);
   const [paintsCollected, setPaintsCollected] = useState<number>(0);
   const [totalPaints, setTotalPaints] = useState<number>(0);
+  const [completedLevel, setCompletedLevel] = useState<number | null>(null);
+  const [hasAuraPower, setHasAuraPower] = useState<boolean>(false);
+  const [monstersKilledCount, setMonstersKilledCount] = useState<number>(0);
+  const [auraSecondsLeft, setAuraSecondsLeft] = useState<number>(0);
 
   // Asset hooks
   const { playerImg, playerImgFlipped, monsterImg, bgImg, portinari1Img, portinari2Img, portinari3Img, portinari4Img, chorinhoImg, namoradosImg, baianaImg, descobrimentoImg, cafeImg } = useGameImages();
@@ -502,6 +848,16 @@ export default function App() {
   const currentLevelNumberRef = useRef<number>(1);
   const cameraRef = useRef<{ x: number }>({ x: 0 });
 
+  // ⚡ New Power-Up State Engine
+  const activePowerRef = useRef<{ type: string; timer: number; radius: number; angle: number }>({ type: "", timer: 0, radius: 0, angle: 0 });
+  const [powerPercent, setPowerPercent] = useState<number>(0);
+  const powerPercentRef = useRef<number>(0);
+
+  // Sparking aura state references
+  const hasAuraPowerRef = useRef<boolean>(false);
+  const monstersKilledCountRef = useRef<number>(0);
+  const auraTimerRef = useRef<number>(0);
+
   // Reset Player state
   const resetPlayer = useCallback(() => {
     const player = playerRef.current;
@@ -514,6 +870,33 @@ export default function App() {
     cameraRef.current.x = 0;
   }, []);
 
+  // Move to next level after showing award artwork
+  const loadNextLevel = useCallback(() => {
+    if (currentLevelNumberRef.current < 5) {
+      currentLevelNumberRef.current += 1;
+      activeLevelRef.current = Ki(currentLevelNumberRef.current);
+      setTotalPaints(activeLevelRef.current.paints.length);
+      setPaintsCollected(0);
+      resetPlayer();
+      // Reset power-up charges
+      powerPercentRef.current = 0;
+      setPowerPercent(0);
+      activePowerRef.current = { type: "", timer: 0, radius: 0, angle: 0 };
+      setCompletedLevel(null);
+      
+      // Reset Aura state
+      hasAuraPowerRef.current = false;
+      setHasAuraPower(false);
+      monstersKilledCountRef.current = 0;
+      setMonstersKilledCount(0);
+      auraTimerRef.current = 0;
+      setAuraSecondsLeft(0);
+
+      setGameState("playing");
+      themeMusic.play();
+    }
+  }, [resetPlayer]);
+
   // Launch Game
   const startGame = useCallback(() => {
     livesRef.current = Gi;
@@ -523,8 +906,22 @@ export default function App() {
     setTotalPaints(activeLevelRef.current.paints.length);
     setPaintsCollected(0);
     resetPlayer();
+    // Reset power percentage
+    powerPercentRef.current = 0;
+    setPowerPercent(0);
+    activePowerRef.current = { type: "", timer: 0, radius: 0, angle: 0 };
     // Clear particles on restart
     particlesRef.current = [];
+    setCompletedLevel(null);
+
+    // Reset Aura state
+    hasAuraPowerRef.current = false;
+    setHasAuraPower(false);
+    monstersKilledCountRef.current = 0;
+    setMonstersKilledCount(0);
+    auraTimerRef.current = 0;
+    setAuraSecondsLeft(0);
+
     setGameState("playing");
     themeMusic.play();
 
@@ -537,17 +934,93 @@ export default function App() {
     }
   }, [resetPlayer, themeMusic]);
 
+  // Squash/Defeat a monster and handle paint drops, sounds, and "Farmando Aura" counts
+  const squashMonster = useCallback((monster: Monster) => {
+    if (monster.x < -500) return; // already dead
+
+    const level = activeLevelRef.current;
+    
+    // Spawn drop paint under platform index monsters!
+    if (monster.platformIdx !== undefined) {
+      const colorsList = ["#ff4081", "#ffd54f", "#4fc3f7", "#ba68c8"];
+      level.paints.push({
+        x: monster.x + monster.width / 2 - 15,
+        y: monster.y - 10,
+        width: 30,
+        height: 40,
+        color: colorsList[Math.floor(Math.random() * colorsList.length)],
+        collected: false,
+      });
+      setTotalPaints((prev) => prev + 1);
+    }
+
+    // Capture position before moving off screen
+    const origX = monster.x;
+    const origY = monster.y;
+    monster.x = -1000;
+
+    // Squash splat particles
+    spawnParticles(origX + monster.width / 2, origY + monster.height / 2, 30, "celebration", monster.color);
+
+    // Power Aura logic
+    if (hasAuraPowerRef.current) {
+      sounds.playPoint();
+    } else {
+      monstersKilledCountRef.current += 1;
+      if (monstersKilledCountRef.current >= 3) {
+        monstersKilledCountRef.current = 0;
+        hasAuraPowerRef.current = true;
+        setHasAuraPower(true);
+        auraTimerRef.current = 1200; // 20 seconds at ~60 FPS
+        setAuraSecondsLeft(20);
+        sounds.playAura(); // 🔊 Play specific retro aura active sound!
+      } else {
+        sounds.playPoint();
+      }
+      setMonstersKilledCount(monstersKilledCountRef.current);
+    }
+  }, [spawnParticles, sounds]);
+
   // Handle player death or loss of life
   const handlePlayerLostLife = useCallback(() => {
     livesRef.current -= 1;
     setLives(livesRef.current);
+    // Reset power percentage on life loss
+    powerPercentRef.current = 0;
+    setPowerPercent(0);
+    activePowerRef.current = { type: "", timer: 0, radius: 0, angle: 0 };
+
+    // Reset Aura on death/life loss (Até a próxima morte / 20 seconds limit)
+    hasAuraPowerRef.current = false;
+    setHasAuraPower(false);
+    monstersKilledCountRef.current = 0;
+    setMonstersKilledCount(0);
+    auraTimerRef.current = 0;
+    setAuraSecondsLeft(0);
+
     if (livesRef.current <= 0) {
       setGameState("gameover");
       themeMusic.stop();
       sounds.playGameOver();
     } else {
+      sounds.playLoss(); // 🔊 Play direct high-quality retro hit/loss sound
       resetPlayer();
-      activeLevelRef.current = Ki(currentLevelNumberRef.current);
+      
+      const currentLevel = activeLevelRef.current;
+      const initialLevel = Ki(currentLevelNumberRef.current);
+      
+      // Keep defeated/squashed monsters dead, and reset alive monsters to their initial patrol starting positions
+      currentLevel.monsters = initialLevel.monsters.map((initMon, idx) => {
+        const curMon = currentLevel.monsters[idx];
+        if (curMon && curMon.x < -500) {
+          return { ...initMon, x: -1000 };
+        }
+        return initMon;
+      });
+
+      // Reset positions of platforms to their original states
+      currentLevel.platforms = initialLevel.platforms;
+
       particlesRef.current = [];
     }
   }, [resetPlayer, themeMusic, sounds]);
@@ -897,6 +1370,31 @@ export default function App() {
       const walkTime = time * 18;
       const runBounceY = isMoving && player.onGround ? Math.abs(Math.sin(walkTime)) * 5 : 0;
 
+      // Glow Aura Effects for powered up Candinho (Farmando Aura)
+      if (hasAuraPowerRef.current) {
+        ctx.save();
+        const pulse = 10 + Math.abs(Math.sin(time * 12)) * 15;
+        ctx.shadowBlur = pulse + 15;
+        ctx.shadowColor = "#ffeb3b"; // Rich yellow glow
+
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+
+        const radialGrad = ctx.createRadialGradient(
+          px, py, 15,
+          px, py, 60 + pulse
+        );
+        radialGrad.addColorStop(0, "rgba(255, 235, 59, 0.9)");
+        radialGrad.addColorStop(0.4, "rgba(255, 193, 7, 0.4)");
+        radialGrad.addColorStop(1, "rgba(255, 152, 0, 0)");
+
+        ctx.fillStyle = radialGrad;
+        ctx.beginPath();
+        ctx.arc(px, py, 60 + pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
       if (playerImg.current) {
         const drawX = player.x - 30;
         const drawY = player.y - 20 - runBounceY;
@@ -940,6 +1438,165 @@ export default function App() {
         ctx.stroke();
       }
 
+      // 6.5 Draw Active Superpower Effects
+      const actPower = activePowerRef.current;
+      if (actPower.type !== "") {
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+
+        if (actPower.type === "spiral") {
+          // Vortex de tinta colorida em espiral giratória (Level 1)
+          ctx.save();
+          ctx.translate(px, py);
+          actPower.angle += 0.08;
+          ctx.rotate(actPower.angle);
+          const spiralColors = ["#ff3366", "#33ccff", "#33ff99", "#ffcc33", "#cc33ff"];
+          for (let i = 0; i < 5; i++) {
+            const startAngle = (i * Math.PI * 2) / 5;
+            ctx.beginPath();
+            ctx.strokeStyle = spiralColors[i];
+            ctx.lineWidth = 10;
+            ctx.lineCap = "round";
+            for (let theta = 0; theta < Math.PI * 2; theta += 0.15) {
+              const r = 20 + theta * 35; // Expand radius outwards
+              const x = Math.cos(startAngle + theta) * r;
+              const y = Math.sin(startAngle + theta) * r;
+              if (theta === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+          }
+          ctx.restore();
+        } else if (actPower.type === "shield") {
+          // Campo de força / Escudo Protetor (Level 2)
+          ctx.save();
+          ctx.translate(px, py);
+          const pulseRadius = 140 + Math.sin(time * 15) * 8;
+          
+          // Outer glowing ring
+          ctx.strokeStyle = "rgba(79, 195, 247, 0.85)";
+          ctx.lineWidth = 6;
+          ctx.shadowColor = "#4fc3f7";
+          ctx.shadowBlur = 20;
+          ctx.beginPath();
+          ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Inner colorful contrast ring
+          ctx.strokeStyle = "rgba(236, 64, 122, 0.65)";
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.arc(0, 0, pulseRadius - 18, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Smooth gradient filled glow inside the spherical force bubble
+          const grad = ctx.createRadialGradient(0, 0, 15, 0, 0, pulseRadius);
+          grad.addColorStop(0, "rgba(79, 195, 247, 0.0)");
+          grad.addColorStop(0.6, "rgba(79, 195, 247, 0.18)");
+          grad.addColorStop(1, "rgba(79, 195, 247, 0.45)");
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Animated energy rays revolving inside the sphere shield
+          ctx.rotate(-time * 5);
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.lineWidth = 3;
+          for (let j = 0; j < 6; j++) {
+            const a = (j * Math.PI * 2) / 6;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * (pulseRadius - 35), Math.sin(a) * (pulseRadius - 35));
+            ctx.lineTo(Math.cos(a + 0.25) * pulseRadius, Math.sin(a + 0.25) * pulseRadius);
+            ctx.stroke();
+          }
+          ctx.restore();
+        } else if (actPower.type === "superforce") {
+          // Furacão Portinari (Superforça Level 3)
+          ctx.save();
+          ctx.translate(px, py);
+          
+          // Combustion solar flare crown
+          const flareCount = 12;
+          ctx.fillStyle = "rgba(255, 145, 0, 0.35)";
+          for (let j = 0; j < flareCount; j++) {
+            const a = (j * Math.PI * 2) / flareCount + time * 6;
+            const h = 60 + Math.sin(time * 24 + j) * 20;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a - 0.18) * 40, Math.sin(a - 0.18) * 40);
+            ctx.lineTo(Math.cos(a) * h, Math.sin(a) * h);
+            ctx.lineTo(Math.cos(a + 0.18) * 40, Math.sin(a + 0.18) * 40);
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // Incandescent solar energy orbit Core
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 5;
+          ctx.shadowColor = "#ffeb3b";
+          ctx.shadowBlur = 25;
+          ctx.beginPath();
+          ctx.arc(0, 0, 50, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Crackling high-power color lightning bolts
+          ctx.strokeStyle = "#ffeb3b";
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          for (let k = 0; k < 8; k++) {
+            const rx = (Math.random() - 0.5) * 180;
+            const ry = (Math.random() - 0.5) * 180;
+            if (k === 0) ctx.moveTo(rx, ry);
+            else ctx.lineTo(rx, ry);
+          }
+          ctx.stroke();
+          ctx.restore();
+        } else if (actPower.type === "sphere") {
+          // Esfera de energia (Level 4 expanding watercolor sphere)
+          ctx.save();
+          ctx.translate(px, py);
+          
+          const maxRadius = 850;
+          const expansionProgress = Math.min(1, (2400 - actPower.timer) / 120);
+          actPower.radius = expansionProgress * maxRadius;
+          const curRadius = actPower.radius;
+
+          const colors = [
+            "rgba(244, 67, 54, 0.15)",   // Red
+            "rgba(233, 30, 99, 0.2)",    // Pink
+            "rgba(156, 39, 176, 0.25)",  // Purple
+            "rgba(33, 150, 243, 0.3)"    // Blue
+          ];
+          
+          for (let m = 0; m < colors.length; m++) {
+            const r = Math.max(0, curRadius - m * 50);
+            ctx.fillStyle = colors[m];
+            ctx.strokeStyle = colors[m].replace("0.15", "0.9").replace("0.2", "0.9").replace("0.25", "0.9").replace("0.3", "0.9");
+            ctx.lineWidth = 6 - m;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+
+          // Shimmering white painterly paint drops on the expand frontier
+          ctx.fillStyle = "#ffffff";
+          ctx.shadowColor = "#ffffff";
+          ctx.shadowBlur = 15;
+          for (let n = 0; n < 24; n++) {
+            const a = (n * Math.PI * 2) / 24 + time * 4;
+            const dotX = Math.cos(a) * curRadius;
+            const dotY = Math.sin(a) * curRadius;
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 7 + Math.sin(time * 12 + n) * 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
       // 7. Draw Splash Particles
       for (const p of particlesRef.current) {
         ctx.save();
@@ -973,6 +1630,72 @@ export default function App() {
     const player = playerRef.current;
     const level = activeLevelRef.current;
     const controls = controlsRef.current;
+
+    // ⚡ Update, Depletion & Automatic Activation of Superpower
+    const actPower = activePowerRef.current;
+    if (actPower.type !== "") {
+      actPower.timer--;
+      powerPercentRef.current = (actPower.timer / 2400) * 100;
+      setPowerPercent(Math.round(powerPercentRef.current));
+
+      if (actPower.timer <= 0) {
+        actPower.type = "";
+        powerPercentRef.current = 0;
+        setPowerPercent(0);
+      }
+    } else {
+      if (powerPercentRef.current >= 99.9) {
+        // "Os poderes precisam ser carregados na presença ameaçadora dos monstros, senão são gastos no cenário vazio e perdem a função."
+        // Only activate superpower if there is an active (not squashed) monster nearby (threatening distance e.g., within 1100px range)
+        const hasThreatNearby = level.monsters.some((m) => {
+          if (m.x < -500) return false; // Already defeated/squashed
+          const dist = Math.abs(m.x - player.x);
+          return dist <= 1100; // Inside threat/screen action radius
+        });
+
+        if (hasThreatNearby) {
+          const lvlNo = currentLevelNumberRef.current;
+          let type = "spiral";
+          if (lvlNo === 1) type = "spiral";
+          else if (lvlNo === 2) type = "shield";
+          else if (lvlNo === 3) type = "superforce";
+          else if (lvlNo === 4) type = "sphere";
+          else {
+            const types = ["spiral", "shield", "superforce", "sphere"];
+            type = types[(lvlNo - 1) % 4];
+          }
+
+          activePowerRef.current = {
+            type,
+            timer: 2400, // 40 seconds of active superpower (2400 frames at ~60fps)
+            radius: 0,
+            angle: 0
+          };
+
+          // Trigger major activation fireworks particles centered around Candinho
+          spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 45, "celebration", "#fbbf24");
+          // Play superpower activation point sound
+          sounds.playPoint();
+        }
+      }
+    }
+
+    // 🌟 Tick down Aura Power-up timer (20 seconds duration)
+    if (hasAuraPowerRef.current) {
+      if (auraTimerRef.current > 0) {
+        auraTimerRef.current--;
+        const seconds = Math.ceil(auraTimerRef.current / 60);
+        setAuraSecondsLeft((prev) => {
+          if (prev !== seconds) return seconds;
+          return prev;
+        });
+        if (auraTimerRef.current <= 0) {
+          hasAuraPowerRef.current = false;
+          setHasAuraPower(false);
+          setAuraSecondsLeft(0);
+        }
+      }
+    }
 
     // Frame increment for particle triggers
     frameCounterRef.current++;
@@ -1040,6 +1763,17 @@ export default function App() {
         const spawnY = player.y + player.height;
         spawnParticles(spawnX, spawnY, 2, "trail");
       }
+    }
+
+    // Sparkles from the active Farmando Aura
+    if (hasAuraPowerRef.current && frameCounterRef.current % 6 === 0) {
+      spawnParticles(
+        player.x + Math.random() * player.width,
+        player.y + Math.random() * player.height,
+        1,
+        "trail",
+        "#ffb300"
+      );
     }
 
     // Jumps with immediate jump particles
@@ -1111,6 +1845,15 @@ export default function App() {
         paint.collected = true;
         collectedCount++;
         sounds.playPoint();
+
+        // 🎨 Charge superpower bar upon collection
+        if (activePowerRef.current.type === "") {
+          const totalLvlPaints = level.paints.length || 5;
+          const reward = 100 / totalLvlPaints;
+          powerPercentRef.current = Math.min(100, powerPercentRef.current + reward);
+          setPowerPercent(Math.round(powerPercentRef.current));
+        }
+
         // Colorful explosion splash
         spawnParticles(paint.x + paint.width / 2, paint.y + paint.height / 2, 12, "celebration", paint.color);
       }
@@ -1119,10 +1862,43 @@ export default function App() {
 
     // Monsters checks
     for (const monster of level.monsters) {
+      if (monster.x < -500) {
+        continue; // Monster already squashed, skip
+      }
+
+      // 💥 Checks if superpower active defeats this monster
+      const actPower = activePowerRef.current;
+      if (actPower.type !== "") {
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+        const mx = monster.x + monster.width / 2;
+        const my = monster.y + monster.height / 2;
+        const dist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2);
+
+        let powerHits = false;
+        if (actPower.type === "spiral" && dist < 230) {
+          powerHits = true;
+        } else if (actPower.type === "shield" && dist < 170) {
+          powerHits = true;
+        } else if (actPower.type === "superforce" && dist < 210) {
+          powerHits = true;
+        } else if (actPower.type === "sphere" && dist < actPower.radius) {
+          powerHits = true;
+        }
+
+        if (powerHits) {
+          squashMonster(monster);
+          continue; // Go to next monster
+        }
+      }
       // Pin platform monsters onto their parents
       if (monster.platformIdx !== undefined) {
         const plat = level.platforms[monster.platformIdx];
         if (plat) {
+          // Carry the monster horizontally with its moving platform!
+          if (plat.vx !== undefined) {
+            monster.x += plat.vx;
+          }
           monster.minX = plat.x;
           monster.maxX = plat.x + plat.width;
           monster.y = plat.y - monster.height;
@@ -1134,18 +1910,55 @@ export default function App() {
       }
 
       // 🧠 Seeking & hunting AI for Candinho
-      // Calculate chase direction towards Candinho
-      const dx = player.x - monster.x;
-      const faceDir = dx > 0 ? 1 : -1;
+      // When NOT in presence of Candinho, they patrol back and forth between minX and maxX as sentinels.
+      // When in presence, they chase Candinho inside their allowable patrol region.
       
-      // Establish a normal, fully controlled chasing speed
-      const baseChaseSpeed = monster.platformIdx !== undefined ? 1.5 : 2.5;
-      monster.vx = faceDir * baseChaseSpeed;
+      // We store the original patrol base speed on initialization/start if not stored already
+      if ((monster as any).baseVx === undefined) {
+        (monster as any).baseVx = monster.vx || 1.8;
+      }
 
-      // Apply movement
-      monster.x += monster.vx;
+      const dx = player.x - monster.x;
+      const dy = player.y - monster.y;
+      
+      // Detection ranges: shorter on platforms to avoid getting stuck or blocking excessively
+      const detectRangeX = monster.platformIdx !== undefined ? 360 : 480;
+      const detectRangeY = monster.platformIdx !== undefined ? 35 : 200;
+      const isCandinhoInPresence = Math.abs(dx) < detectRangeX && Math.abs(dy) < detectRangeY;
 
-      // Clamp to patrol/scenario boundaries
+      if (isCandinhoInPresence) {
+        // Encontra-se na presença do Candinho: persegue-o!
+        const faceDir = dx > 0 ? 1 : -1;
+        const baseChaseSpeed = monster.platformIdx !== undefined ? 1.5 : 2.5;
+        monster.vx = faceDir * baseChaseSpeed;
+        
+        // Apply movement
+        monster.x += monster.vx;
+      } else {
+        // Sem a presença do Candinho: age como sentinela patrulhando ida e volta
+        const baseVx = (monster as any).baseVx;
+        if (Math.abs(monster.vx) !== Math.abs(baseVx)) {
+          // Resume standard patrol speed with the last looking direction
+          const curDir = monster.vx > 0 ? 1 : -1;
+          monster.vx = curDir * Math.abs(baseVx);
+        }
+        
+        // Apply movement
+        monster.x += monster.vx;
+
+        // Turn around and bounce when reaching patrol limits
+        if (monster.x <= monster.minX || monster.x + monster.width >= monster.maxX) {
+          if (monster.x < monster.minX) {
+            monster.x = monster.minX;
+          } else if (monster.x + monster.width > monster.maxX) {
+            monster.x = monster.maxX - monster.width;
+          }
+          monster.vx *= -1;
+          (monster as any).baseVx = monster.vx; // persist the turned direction for the patrol base
+        }
+      }
+
+      // Final bounding clamp just to safeguard platform positions from going out-of-bounds
       if (monster.x < monster.minX) {
         monster.x = monster.minX;
       } else if (monster.x + monster.width > monster.maxX) {
@@ -1164,28 +1977,19 @@ export default function App() {
         player.y + player.height > monster.y + 5 &&
         player.y < monster.y + monster.height - 5
       ) {
-        // Stomp from top -> Squash monster
-        if (player.vy > 0 && player.y + player.height < monster.y + monster.height / 2) {
-          if (monster.platformIdx !== undefined) {
-            // Drop custom decorative paints under platform index monsters!
-            const colorsList = ["#ff4081", "#ffd54f", "#4fc3f7", "#ba68c8"];
-            level.paints.push({
-              x: monster.x + monster.width / 2 - 15,
-              y: monster.y - 10,
-              width: 30,
-              height: 40,
-              color: colorsList[Math.floor(Math.random() * colorsList.length)],
-              collected: false,
-            });
-            setTotalPaints((prev) => prev + 1);
-            sounds.playPoint();
+        if (hasAuraPowerRef.current) {
+          // Destrói o monstro tocando nele!
+          squashMonster(monster);
+          
+          // Se colidiu pulando ou caindo por cima, dá um rebote normal, senão um pequeno coice vertical de 3px
+          if (player.vy > 0 && player.y + player.height < monster.y + monster.height / 2) {
+            player.vy = kf * 0.6;
+          } else {
+            player.vy = -3;
           }
-
-          // Squash splat blast
-          spawnParticles(monster.x + monster.width / 2, monster.y + monster.height / 2, 25, "celebration", monster.color);
-
-          // Launch off-screen & bounce up
-          monster.x = -1000;
+        } else if (player.vy > 0 && player.y + player.height < monster.y + monster.height / 2) {
+          // Stomp from top -> Squash monster
+          squashMonster(monster);
           player.vy = kf * 0.6;
         } else {
           // Touch from side or below -> lose life
@@ -1206,16 +2010,16 @@ export default function App() {
       player.y < goal.y + goal.height
     ) {
       if (currentLevelNumberRef.current < 5) {
-        currentLevelNumberRef.current += 1;
-        activeLevelRef.current = Ki(currentLevelNumberRef.current);
-        setTotalPaints((prev) => prev + activeLevelRef.current.paints.length);
-        resetPlayer();
+        // Show painting in its beautiful, full restoration stage
+        setCompletedLevel(currentLevelNumberRef.current);
+        setGameState("level_completed_showcase");
+        sounds.playNextLevel(); // 🔊 Play specific retro next-level chords!
         // Level completion easel fireworks splatters
-        spawnParticles(goal.x + goal.width / 2, goal.y + goal.height / 2, 40, "celebration");
+        spawnParticles(goal.x + goal.width / 2, goal.y + goal.height / 2, 50, "celebration");
       } else {
         setGameState("victory");
         themeMusic.stop();
-        sounds.playGameOver();
+        sounds.playVictory(); // 🔊 Play triumphant retro arcade victory fanfare!
         // Epic final victory burst!
         spawnParticles(goal.x + goal.width / 2, goal.y + goal.height / 2, 80, "celebration");
       }
@@ -1314,6 +2118,65 @@ export default function App() {
             <span className="flex items-center gap-1">🎨 <b className="font-sans text-white">{paintsCollected}/{totalPaints}</b></span>
             <span className="w-px h-4 bg-accent/30" />
             <span className="text-xs bg-accent/20 px-2.5 py-0.5 rounded-full text-white font-sans font-medium">Nível {currentLevelNumberRef.current}</span>
+            <span className="w-px h-4 bg-accent/30" />
+            <span className="flex items-center gap-1 select-none">
+              {hasAuraPower ? (
+                <span className="text-xs bg-yellow-400 text-black px-2.5 py-0.5 rounded-full font-sans font-black tracking-wide animate-pulse shadow-md shadow-yellow-500/35">
+                  🌟 AURA: {auraSecondsLeft}s
+                </span>
+              ) : (
+                <span className="text-xs text-yellow-300/90 font-sans font-semibold flex items-center gap-1 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/30">
+                  ✨ Aura: {monstersKilledCount}/3
+                </span>
+              )}
+            </span>
+          </div>
+
+          {/* Farmando Aura Large Screen Title / Badge */}
+          {hasAuraPower && (
+            <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-yellow-400 text-black border-2 border-amber-800 rounded-full py-1.5 px-6 font-display font-black text-xs md:text-base shadow-2xl animate-bounce z-45 flex items-center gap-2 select-none">
+              <span>🌟</span>
+              <span>FARMANDO AURA! ({auraSecondsLeft}s)</span>
+              <span>🌟</span>
+            </div>
+          )}
+
+          {/* Superpower Charge Meter HUD */}
+          <div className="fixed top-3 right-3 bg-[#0d0d1f]/85 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-accent/40 z-50 pointer-events-none flex flex-col items-start gap-1 select-none shadow-xl w-60 md:w-64">
+            <div className="w-full flex justify-between items-center">
+              <span className="text-white text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-1">
+                ⚡ {(() => {
+                  const lvlNo = currentLevelNumberRef.current;
+                  if (lvlNo === 1) return "Espiral de Tinta";
+                  if (lvlNo === 2) return "Campo de Força";
+                  if (lvlNo === 3) return "Superforça";
+                  if (lvlNo === 4) return "Esfera de Energia";
+                  return "Espiral de Tinta";
+                })()}
+              </span>
+              <span className="text-xs font-mono text-white/95">
+                {powerPercent}%
+              </span>
+            </div>
+            
+            {/* Visual charge bar */}
+            <div className="relative w-full h-2.5 bg-white/10 rounded-full overflow-hidden border border-white/5">
+              <div 
+                className={`h-full rounded-full transition-all duration-100 ease-out ${
+                  powerPercent >= 100 
+                    ? "bg-gradient-to-r from-yellow-400 via-pink-500 to-red-500 animate-pulse shadow-lg shadow-yellow-500/50" 
+                    : "bg-gradient-to-r from-teal-400 via-cyan-400 to-sky-500"
+                }`}
+                style={{ width: `${powerPercent}%` }}
+              />
+            </div>
+            
+            {/* Helper status description */}
+            <span className="text-[10px] text-white/60 font-sans tracking-tight">
+              {powerPercent >= 100 
+                ? "🚀 PODER ATIVADO! Vencendo monstros!" 
+                : "Pegue tintas para carregar"}
+            </span>
           </div>
 
           {/* Touch Directional Controls for Left/Right movement */}
@@ -1380,6 +2243,51 @@ export default function App() {
               ▲
             </button>
           </div>
+
+          {/* Overlay for Level Completed Easel Masterpiece Restoration Showcase */}
+          {gameState === "level_completed_showcase" && completedLevel && (
+            <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-[#050510]/95 backdrop-blur-xl animate-fade-in">
+              <div className="relative max-w-2xl w-full bg-[#11112a] border-4 border-[#ffb300] rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center gap-5 my-auto max-h-[95vh] overflow-y-auto">
+                {/* Sparkle Header */}
+                <div className="space-y-1">
+                  <span className="text-yellow-400 text-sm md:text-base font-sans font-bold uppercase tracking-wider block">
+                    ✨ Obra de Arte Restaurada! ✨
+                  </span>
+                  <h2 className="text-white text-3xl md:text-4xl font-display font-black tracking-tight drop-shadow">
+                    {completedMasterpieces[completedLevel]?.title} ({completedMasterpieces[completedLevel]?.year})
+                  </h2>
+                </div>
+
+                {/* The Award Masterpiece Drawing Frame */}
+                <div className="relative group w-full aspect-video rounded-2xl overflow-hidden border-4 border-amber-900/60 bg-[#151525] shadow-inner flex items-center justify-center">
+                  <img
+                    src={completedMasterpieces[completedLevel]?.image}
+                    alt={completedMasterpieces[completedLevel]?.title}
+                    className="max-h-full max-w-full object-contain drop-shadow-md rounded-lg transition-transform duration-500 scale-100"
+                    referrerPolicy="no-referrer"
+                  />
+                  
+                  {/* Glowing ambient background shadow */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white text-xs md:text-sm italic font-sans text-center">
+                    Cândido Portinari, {completedMasterpieces[completedLevel]?.year}
+                  </div>
+                </div>
+
+                {/* Kid-friendly storytelling description */}
+                <p className="text-white/95 text-sm md:text-base max-w-lg leading-relaxed font-sans font-medium px-2">
+                  {completedMasterpieces[completedLevel]?.description}
+                </p>
+
+                {/* Action button to load next level */}
+                <button
+                  onClick={loadNextLevel}
+                  className="bg-gradient-to-r from-yellow-500 via-amber-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 active:scale-95 text-white font-sans font-black text-lg md:text-xl py-4 px-10 rounded-full shadow-lg shadow-yellow-500/20 transition-all duration-200 cursor-pointer transform hover:scale-105"
+                >
+                  Próxima Fase! 🚀
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Overlay for Victory/Game Over */}
           {(gameState === "gameover" || gameState === "victory") && (

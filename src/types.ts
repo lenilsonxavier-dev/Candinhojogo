@@ -71,7 +71,7 @@ export interface Particle {
   type: "trail" | "jump" | "dust" | "smudge" | "celebration";
 }
 
-export type GameState = "opening" | "playing" | "gameover" | "victory";
+export type GameState = "opening" | "playing" | "gameover" | "victory" | "level_completed_showcase";
 
 export function getAssetPath(path: string): string {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
