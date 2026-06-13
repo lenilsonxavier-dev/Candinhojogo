@@ -3,17 +3,81 @@ import { OpeningScreen } from "./components/OpeningScreen";
 import { GameOverOverlay } from "./components/GameOverOverlay";
 import { GameState, Level, Player, Platform, Paint, Monster, Particle, getAssetPath } from "./types";
 
-const portinari1Url = "https://i.imgur.com/UxHnz1J.jpg";
-const portinari2Url = "https://i.imgur.com/GnCo524.jpg";
-const portinari3Url = "https://i.imgur.com/VZH7ezB.jpg";
-const portinari4Url = "https://i.imgur.com/fRrjPu4.jpg";
+interface Masterpiece {
+  title: string;
+  image: string;
+  year: string;
+  description: string;
+}
 
-// Verified direct high-res images from Google Arts & Culture for Cândido Portinari masterpieces
-const chorinhoUrl = "https://lh3.googleusercontent.com/ci/AL18g_Q1NenEUCYAuqideiggOhD6wbwyzvWHXI91ZYjr7cz9OCmsOWVm02X0z8RA19VbYSNmzpauDQU=s1200";
-const namoradosUrl = "https://lh3.googleusercontent.com/ci/AL18g_TQeaNMpSkFkC6H6z8iMiZXn-rjYxymo6XMGzcCP3vIlXsDuLkZy-fOUy0igS-P7oDcRJX5IA=s1200";
-const baianaUrl = "https://lh3.googleusercontent.com/ci/AL18g_SoHZLRc-1xyHJma3EnaMPvrigdSTCeLH5KrnyUFr6844kaJXzg9IqIeXX7Yi4ZvRBH0pupz1Kx=s1200";
-const descobrimentoUrl = "https://lh3.googleusercontent.com/ci/AL18g_QI0ed5LO7C8U0LXNhFpPKwG_N_e_P1AcKhuGyj8LT8uFLYPlG8eLk5cH-UPCLAg9ou3pUPcT0=s1200";
-const cafeUrl = "https://lh3.googleusercontent.com/ci/AL18g_Q14DitxUjD8j3pUO8VVcBdczB1heujp7zn8W5siZENX0z7_GOMfhPgA_pkAici5wLy2QIv0w=s1200";
+const masterpiecesList: Masterpiece[] = [
+  {
+    title: "Jangadas do Nordeste",
+    image: "https://i.imgur.com/EOG0IWv.jpg",
+    year: "1939",
+    description: "Celebra os corajosos pescadores e jangadeiros de nossa costa sob a linda luz do mar brasileiro."
+  },
+  {
+    title: "Menino com Pião",
+    image: "https://i.imgur.com/fRrjPu4.jpg",
+    year: "1947",
+    description: "Uma carinhosa e singela homenagem do mestre às brincadeiras brasileiras tradicionais, focando no clássico brinquedo de madeira."
+  },
+  {
+    title: "O Lavrador de Café",
+    image: "https://i.imgur.com/8DIvcRC.jpg",
+    year: "1934",
+    description: "Uma das pinturas mais emblemáticas de Portinari, apresentando o trabalhador forte com os pés e mãos firmados na terra da fazenda de café."
+  },
+  {
+    title: "Denise com o Carneiro",
+    image: "https://i.imgur.com/csBkq7o.jpeg",
+    year: "1961",
+    description: "A netinha amada do pintor, Denise, é retratada junto a um carneirinho branco num cenário de ternura infinita."
+  },
+  {
+    title: "Os Retirantes",
+    image: "https://i.imgur.com/GnCo524.jpg",
+    year: "1944",
+    description: "Retrata com profunda emoção e realismo social a jornada humilde e heroica das famílias do sertão em busca de uma vida melhor."
+  },
+  {
+    title: "Meninos no Balanço",
+    image: "https://i.imgur.com/VZH7ezB.jpg",
+    year: "1960",
+    description: "Expressa a pura inocência da infância do interior de São Paulo, balançando-se alegremente sob o céu de Portinari."
+  },
+  {
+    title: "Chorinho",
+    image: "https://i.imgur.com/EJkH3Vv.jpeg",
+    year: "1943",
+    description: "Homenagem fantástica à riqueza musical nacional, com os músicos tocando flauta, violão e pandeiro com muita alma!"
+  },
+  {
+    title: "Crianças Brincando",
+    image: "https://i.imgur.com/cEnlQVd.jpeg",
+    year: "1940",
+    description: "Capta os sorrisos e a maravilhosa energia lúdica de meninos e meninas brincando de roda em total harmonia."
+  },
+  {
+    title: "O Mestiço",
+    image: "https://www.historiadasartes.com/wp-content/uploads/2016/04/m_mestico.jpg",
+    year: "1934",
+    description: "Esta prestigiada obra exalta a dignidade, a força e os traços marcantes do trabalhador brasileiro."
+  },
+  {
+    title: "Dom Quixote",
+    image: "https://i.imgur.com/y5pcAoJ.jpeg",
+    year: "1961",
+    description: "Fabulosa interpretação das aventuras do lendário cavaleiro andante de Cervantes, repleta de cores e traços dinâmicos!"
+  },
+  {
+    title: "Os Namorados",
+    image: "https://i.imgur.com/18QYrWm.jpeg",
+    year: "1940",
+    description: "Um quadro poético e afetuoso que retrata o sentimento romântico sob as cores marcantes de Portinari."
+  }
+];
 
 // Core Game Area Constants
 const Et = 1920; // Virtual width
@@ -71,7 +135,11 @@ function Ki(level: number): Level {
   const paints: Paint[] = [];
   const monsters: Monster[] = [];
 
-  if (level === 1) {
+  const baseLevel = ((level - 1) % 5) + 1;
+  const loopOffset = Math.floor((level - 1) / 5) * 3;
+  const speedMultiplier = 1 + Math.floor((level - 1) / 5) * 0.25;
+
+  if (baseLevel === 1) {
     platforms.push(
       { x: 240, y: 780, width: 280, height: ge, color: "#2e7d32" },
       { x: 600, y: 640, width: 280, height: ge, color: "#2e7d32" },
@@ -79,123 +147,123 @@ function Ki(level: number): Level {
       { x: 1340, y: 360, width: 280, height: ge, color: "#2e7d32" },
       { x: 380, y: 480, width: 220, height: ge, color: "#2e7d32" }
     );
-    paints.push(...Zl(10, 0));
+    paints.push(...Zl(10, loopOffset));
     paints.push(
-      { x: 320, y: 720, width: we, height: Se, color: ye[10], collected: false },
-      { x: 670, y: 580, width: we, height: Se, color: ye[11], collected: false },
-      { x: 1040, y: 440, width: we, height: Se, color: ye[12], collected: false },
-      { x: 1420, y: 300, width: we, height: Se, color: ye[13], collected: false },
-      { x: 440, y: 420, width: we, height: Se, color: ye[14], collected: false }
+      { x: 320, y: 720, width: we, height: Se, color: ye[(10 + loopOffset) % ye.length], collected: false },
+      { x: 670, y: 580, width: we, height: Se, color: ye[(11 + loopOffset) % ye.length], collected: false },
+      { x: 1040, y: 440, width: we, height: Se, color: ye[(12 + loopOffset) % ye.length], collected: false },
+      { x: 1420, y: 300, width: we, height: Se, color: ye[(13 + loopOffset) % ye.length], collected: false },
+      { x: 440, y: 420, width: we, height: Se, color: ye[(14 + loopOffset) % ye.length], collected: false }
     );
     monsters.push(
-      { x: 600, y: Ve - te, width: je, height: te, vx: 2.5, color: "#880088", minX: 480, maxX: 880 },
-      { x: 1100, y: Ve - te, width: je, height: te, vx: 3, color: "#880088", minX: 920, maxX: 1340 },
-      { x: 1530, y: Ve - te, width: je, height: te, vx: 2, color: "#9c27b0", minX: 1360, maxX: 1750 },
-      { x: 280, y: 780 - te, width: je, height: te, vx: 1.2, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 1 },
-      { x: 640, y: 640 - te, width: je, height: te, vx: 1.4, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 },
-      { x: 1000, y: 500 - te, width: je, height: te, vx: 1.6, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 3 },
-      { x: 420, y: 480 - te, width: je, height: te, vx: 1.5, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 5 },
-      { x: 1380, y: 360 - te, width: je, height: te, vx: 1.3, color: "#e91e63", minX: 0, maxX: 0, platformIdx: 4 }
+      { x: 600, y: Ve - te, width: je, height: te, vx: 2.5 * speedMultiplier, color: "#880088", minX: 480, maxX: 880 },
+      { x: 1100, y: Ve - te, width: je, height: te, vx: 3 * speedMultiplier, color: "#880088", minX: 920, maxX: 1340 },
+      { x: 1530, y: Ve - te, width: je, height: te, vx: 2 * speedMultiplier, color: "#9c27b0", minX: 1360, maxX: 1750 },
+      { x: 280, y: 780 - te, width: je, height: te, vx: 1.2 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 1 },
+      { x: 640, y: 640 - te, width: je, height: te, vx: 1.4 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 },
+      { x: 1000, y: 500 - te, width: je, height: te, vx: 1.6 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 3 },
+      { x: 420, y: 480 - te, width: je, height: te, vx: 1.5 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 5 },
+      { x: 1380, y: 360 - te, width: je, height: te, vx: 1.3 * speedMultiplier, color: "#e91e63", minX: 0, maxX: 0, platformIdx: 4 }
     );
-  } else if (level === 2) {
+  } else if (baseLevel === 2) {
     platforms.push(
       { x: 140, y: 780, width: 260, height: ge, color: "#2e7d32" },
-      { x: 500, y: 640, width: 260, height: ge, color: "#1b5e20", vx: 2, minX: 480, maxX: 820 },
+      { x: 500, y: 640, width: 260, height: ge, color: "#1b5e20", vx: 2 * speedMultiplier, minX: 480, maxX: 820 },
       { x: 860, y: 500, width: 300, height: ge, color: "#2e7d32" },
-      { x: 1240, y: 360, width: 260, height: ge, color: "#1b5e20", vy: 1.6, minY: 280, maxY: 460 },
+      { x: 1240, y: 360, width: 260, height: ge, color: "#1b5e20", vy: 1.6 * speedMultiplier, minY: 280, maxY: 460 },
       { x: 1600, y: 240, width: 280, height: ge, color: "#2e7d32" },
       { x: 260, y: 540, width: 220, height: ge, color: "#2e7d32" },
       { x: 740, y: 360, width: 220, height: ge, color: "#2e7d32" }
     );
-    paints.push(...Zl(9, 0));
+    paints.push(...Zl(9, loopOffset));
     paints.push(
-      { x: 220, y: 720, width: we, height: Se, color: ye[9], collected: false },
-      { x: 580, y: 580, width: we, height: Se, color: ye[10], collected: false },
-      { x: 940, y: 440, width: we, height: Se, color: ye[11], collected: false },
-      { x: 1320, y: 300, width: we, height: Se, color: ye[12], collected: false },
-      { x: 1680, y: 180, width: we, height: Se, color: ye[13], collected: false },
-      { x: 820, y: 300, width: we, height: Se, color: ye[14], collected: false }
+      { x: 220, y: 720, width: we, height: Se, color: ye[(9 + loopOffset) % ye.length], collected: false },
+      { x: 580, y: 580, width: we, height: Se, color: ye[(10 + loopOffset) % ye.length], collected: false },
+      { x: 940, y: 440, width: we, height: Se, color: ye[(11 + loopOffset) % ye.length], collected: false },
+      { x: 1320, y: 300, width: we, height: Se, color: ye[(12 + loopOffset) % ye.length], collected: false },
+      { x: 1680, y: 180, width: we, height: Se, color: ye[(13 + loopOffset) % ye.length], collected: false },
+      { x: 820, y: 300, width: we, height: Se, color: ye[(14 + loopOffset) % ye.length], collected: false }
     );
     monsters.push(
-      { x: 360, y: Ve - te, width: je, height: te, vx: 2.5, color: "#880088", minX: 120, maxX: 600 },
-      { x: 860, y: Ve - te, width: je, height: te, vx: 3.5, color: "#880088", minX: 660, maxX: 1080 },
-      { x: 1340, y: Ve - te, width: je, height: te, vx: 3, color: "#880088", minX: 1140, maxX: 1560 },
-      { x: 560, y: 640 - te, width: je, height: te, vx: 1.8, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 },
-      { x: 1290, y: 360 - te, width: je, height: te, vx: 1.5, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 4 }
+      { x: 360, y: Ve - te, width: je, height: te, vx: 2.5 * speedMultiplier, color: "#880088", minX: 120, maxX: 600 },
+      { x: 860, y: Ve - te, width: je, height: te, vx: 3.5 * speedMultiplier, color: "#880088", minX: 660, maxX: 1080 },
+      { x: 1340, y: Ve - te, width: je, height: te, vx: 3 * speedMultiplier, color: "#880088", minX: 1140, maxX: 1560 },
+      { x: 560, y: 640 - te, width: je, height: te, vx: 1.8 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 },
+      { x: 1290, y: 360 - te, width: je, height: te, vx: 1.5 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 4 }
     );
-  } else if (level === 3) {
+  } else if (baseLevel === 3) {
     platforms.push(
       { x: 120, y: 780, width: 220, height: ge, color: "#2e7d32" },
-      { x: 400, y: 640, width: 220, height: ge, color: "#1b5e20", vx: 2.5, minX: 380, maxX: 720 },
+      { x: 400, y: 640, width: 220, height: ge, color: "#1b5e20", vx: 2.5 * speedMultiplier, minX: 380, maxX: 720 },
       { x: 700, y: 500, width: 260, height: ge, color: "#2e7d32" },
-      { x: 1040, y: 360, width: 240, height: ge, color: "#1b5e20", vy: 1.8, minY: 260, maxY: 480 },
+      { x: 1040, y: 360, width: 240, height: ge, color: "#1b5e20", vy: 1.8 * speedMultiplier, minY: 260, maxY: 480 },
       { x: 1340, y: 380, width: 220, height: ge, color: "#2e7d32" },
-      { x: 1620, y: 300, width: 240, height: ge, color: "#1b5e20", vx: -2, minX: 1500, maxX: 1760 },
+      { x: 1620, y: 300, width: 240, height: ge, color: "#1b5e20", vx: -2 * speedMultiplier, minX: 1500, maxX: 1760 },
       { x: 280, y: 460, width: 180, height: ge, color: "#2e7d32" },
-      { x: 640, y: 460, width: 180, height: ge, color: "#1b5e20", vy: 2.2, minY: 380, maxY: 540 },
+      { x: 640, y: 460, width: 180, height: ge, color: "#1b5e20", vy: 2.2 * speedMultiplier, minY: 380, maxY: 540 },
       { x: 940, y: 360, width: 180, height: ge, color: "#2e7d32" }
     );
-    paints.push(...Zl(8, 0));
+    paints.push(...Zl(8, loopOffset));
     paints.push(
-      { x: 200, y: 720, width: we, height: Se, color: ye[8], collected: false },
-      { x: 480, y: 580, width: we, height: Se, color: ye[9], collected: false },
-      { x: 780, y: 440, width: we, height: Se, color: ye[10], collected: false },
-      { x: 1120, y: 300, width: we, height: Se, color: ye[11], collected: false },
-      { x: 1400, y: 320, width: we, height: Se, color: ye[12], collected: false },
-      { x: 1700, y: 240, width: we, height: Se, color: ye[13], collected: false },
-      { x: 1000, y: 300, width: we, height: Se, color: ye[14], collected: false }
+      { x: 200, y: 720, width: we, height: Se, color: ye[(8 + loopOffset) % ye.length], collected: false },
+      { x: 480, y: 580, width: we, height: Se, color: ye[(9 + loopOffset) % ye.length], collected: false },
+      { x: 780, y: 440, width: we, height: Se, color: ye[(10 + loopOffset) % ye.length], collected: false },
+      { x: 1120, y: 300, width: we, height: Se, color: ye[(11 + loopOffset) % ye.length], collected: false },
+      { x: 1400, y: 320, width: we, height: Se, color: ye[(12 + loopOffset) % ye.length], collected: false },
+      { x: 1700, y: 240, width: we, height: Se, color: ye[(13 + loopOffset) % ye.length], collected: false },
+      { x: 1000, y: 300, width: we, height: Se, color: ye[(14 + loopOffset) % ye.length], collected: false }
     );
     monsters.push(
-      { x: 240, y: Ve - te, width: je, height: te, vx: 3, color: "#880088", minX: 60, maxX: 540 },
-      { x: 720, y: Ve - te, width: je, height: te, vx: 3.5, color: "#880088", minX: 540, maxX: 960 },
-      { x: 1200, y: Ve - te, width: je, height: te, vx: 4, color: "#880088", minX: 1020, maxX: 1440 },
-      { x: 1620, y: Ve - te, width: je, height: te, vx: 2.5, color: "#880088", minX: 1440, maxX: 1800 },
-      { x: 460, y: 640 - te, width: je, height: te, vx: 1.8, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 },
-      { x: 1100, y: 360 - te, width: je, height: te, vx: 1.5, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 4 },
-      { x: 1680, y: 300 - te, width: je, height: te, vx: 2, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 6 },
-      { x: 700, y: 460 - te, width: je, height: te, vx: 1.4, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 8 }
+      { x: 240, y: Ve - te, width: je, height: te, vx: 3 * speedMultiplier, color: "#880088", minX: 60, maxX: 540 },
+      { x: 720, y: Ve - te, width: je, height: te, vx: 3.5 * speedMultiplier, color: "#880088", minX: 540, maxX: 960 },
+      { x: 1200, y: Ve - te, width: je, height: te, vx: 4 * speedMultiplier, color: "#880088", minX: 1020, maxX: 1440 },
+      { x: 1620, y: Ve - te, width: je, height: te, vx: 2.5 * speedMultiplier, color: "#880088", minX: 1440, maxX: 1800 },
+      { x: 460, y: 640 - te, width: je, height: te, vx: 1.8 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 },
+      { x: 1100, y: 360 - te, width: je, height: te, vx: 1.5 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 4 },
+      { x: 1680, y: 300 - te, width: je, height: te, vx: 2 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 6 },
+      { x: 700, y: 460 - te, width: je, height: te, vx: 1.4 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 8 }
     );
-  } else if (level === 4) {
+  } else if (baseLevel === 4) {
     platforms.push(
       { x: 160, y: 770, width: 240, height: ge, color: "#2e7d32" },
       { x: 480, y: 640, width: 240, height: ge, color: "#2e7d32" },
-      { x: 800, y: 510, width: 280, height: ge, color: "#1b5e20", vx: 2.2, minX: 750, maxX: 1100 },
+      { x: 800, y: 510, width: 280, height: ge, color: "#1b5e20", vx: 2.2 * speedMultiplier, minX: 750, maxX: 1100 },
       { x: 1160, y: 370, width: 240, height: ge, color: "#2e7d32" },
-      { x: 1460, y: 495, width: 250, height: ge, color: "#1b5e20", vy: 1.7, minY: 320, maxY: 640 },
+      { x: 1460, y: 495, width: 250, height: ge, color: "#1b5e20", vy: 1.7 * speedMultiplier, minY: 320, maxY: 640 },
       { x: 300, y: 400, width: 220, height: ge, color: "#2e7d32" }
     );
-    paints.push(...Zl(9, 4));
+    paints.push(...Zl(9, 4 + loopOffset));
     paints.push(
-      { x: 240, y: 710, width: we, height: Se, color: ye[0], collected: false },
-      { x: 540, y: 580, width: we, height: Se, color: ye[1], collected: false },
-      { x: 860, y: 450, width: we, height: Se, color: ye[2], collected: false },
-      { x: 1220, y: 310, width: we, height: Se, color: ye[3], collected: false },
-      { x: 1510, y: 435, width: we, height: Se, color: ye[4], collected: false }
+      { x: 240, y: 710, width: we, height: Se, color: ye[(0 + loopOffset) % ye.length], collected: false },
+      { x: 540, y: 580, width: we, height: Se, color: ye[(1 + loopOffset) % ye.length], collected: false },
+      { x: 860, y: 450, width: we, height: Se, color: ye[(2 + loopOffset) % ye.length], collected: false },
+      { x: 1220, y: 310, width: we, height: Se, color: ye[(3 + loopOffset) % ye.length], collected: false },
+      { x: 1510, y: 435, width: we, height: Se, color: ye[(4 + loopOffset) % ye.length], collected: false }
     );
     monsters.push(
-      { x: 300, y: Ve - te, width: je, height: te, vx: 2.8, color: "#880088", minX: 100, maxX: 600 },
-      { x: 1000, y: Ve - te, width: je, height: te, vx: 3.3, color: "#880088", minX: 800, maxX: 1400 },
-      { x: 540, y: 640 - te, width: je, height: te, vx: 1.6, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 }
+      { x: 300, y: Ve - te, width: je, height: te, vx: 2.8 * speedMultiplier, color: "#880088", minX: 100, maxX: 600 },
+      { x: 1000, y: Ve - te, width: je, height: te, vx: 3.3 * speedMultiplier, color: "#880088", minX: 800, maxX: 1400 },
+      { x: 540, y: 640 - te, width: je, height: te, vx: 1.6 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 2 }
     );
   } else {
     platforms.push(
       { x: 200, y: 765, width: 250, height: ge, color: "#2e7d32" },
-      { x: 520, y: 620, width: 250, height: ge, color: "#1b5e20", vx: 3.2, minX: 470, maxX: 870 },
+      { x: 520, y: 620, width: 250, height: ge, color: "#1b5e20", vx: 3.2 * speedMultiplier, minX: 470, maxX: 870 },
       { x: 880, y: 480, width: 280, height: ge, color: "#2e7d32" },
-      { x: 1220, y: 340, width: 250, height: ge, color: "#1b5e20", vy: 2.2, minY: 220, maxY: 600 },
+      { x: 1220, y: 340, width: 250, height: ge, color: "#1b5e20", vy: 2.2 * speedMultiplier, minY: 220, maxY: 600 },
       { x: 1540, y: 220, width: 260, height: ge, color: "#2e7d32" }
     );
-    paints.push(...Zl(9, 8));
+    paints.push(...Zl(9, 8 + loopOffset));
     paints.push(
-      { x: 290, y: 705, width: we, height: Se, color: ye[5], collected: false },
-      { x: 590, y: 560, width: we, height: Se, color: ye[6], collected: false },
-      { x: 940, y: 420, width: we, height: Se, color: ye[7], collected: false },
-      { x: 1300, y: 280, width: we, height: Se, color: ye[8], collected: false }
+      { x: 290, y: 705, width: we, height: Se, color: ye[(5 + loopOffset) % ye.length], collected: false },
+      { x: 590, y: 560, width: we, height: Se, color: ye[(6 + loopOffset) % ye.length], collected: false },
+      { x: 940, y: 420, width: we, height: Se, color: ye[(7 + loopOffset) % ye.length], collected: false },
+      { x: 1300, y: 280, width: we, height: Se, color: ye[(8 + loopOffset) % ye.length], collected: false }
     );
     monsters.push(
-      { x: 400, y: Ve - te, width: je, height: te, vx: 3.6, color: "#880088", minX: 100, maxX: 700 },
-      { x: 1100, y: Ve - te, width: je, height: te, vx: 4.2, color: "#880088", minX: 800, maxX: 1500 },
-      { x: 940, y: 480 - te, width: je, height: te, vx: 2.3, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 3 }
+      { x: 400, y: Ve - te, width: je, height: te, vx: 3.6 * speedMultiplier, color: "#880088", minX: 100, maxX: 700 },
+      { x: 1100, y: Ve - te, width: je, height: te, vx: 4.2 * speedMultiplier, color: "#880088", minX: 800, maxX: 1500 },
+      { x: 940, y: 480 - te, width: je, height: te, vx: 2.3 * speedMultiplier, color: "#aa0066", minX: 0, maxX: 0, platformIdx: 3 }
     );
   }
 
@@ -213,17 +281,7 @@ function useGameImages() {
   const playerImgFlippedRef = useRef<HTMLCanvasElement | null>(null);
   const monsterImgRef = useRef<HTMLImageElement | null>(null);
   const bgImgRef = useRef<HTMLImageElement | null>(null);
-  const portinari1ImgRef = useRef<HTMLImageElement | null>(null);
-  const portinari2ImgRef = useRef<HTMLImageElement | null>(null);
-  const portinari3ImgRef = useRef<HTMLImageElement | null>(null);
-  const portinari4ImgRef = useRef<HTMLImageElement | null>(null);
-  
-  // High-res Google Arts and Culture references
-  const chorinhoImgRef = useRef<HTMLImageElement | null>(null);
-  const namoradosImgRef = useRef<HTMLImageElement | null>(null);
-  const baianaImgRef = useRef<HTMLImageElement | null>(null);
-  const descobrimentoImgRef = useRef<HTMLImageElement | null>(null);
-  const cafeImgRef = useRef<HTMLImageElement | null>(null);
+  const masterpieceImgsRef = useRef<HTMLImageElement[]>([]);
   
   const loadedRef = useRef<boolean>(false);
 
@@ -261,83 +319,23 @@ function useGameImages() {
       checkLoaded();
     };
 
-    const p1Img = new Image();
-    p1Img.src = portinari1Url;
-    p1Img.onload = () => {
-      portinari1ImgRef.current = p1Img;
-      checkLoaded();
-    };
-
-    const p2Img = new Image();
-    p2Img.src = portinari2Url;
-    p2Img.onload = () => {
-      portinari2ImgRef.current = p2Img;
-      checkLoaded();
-    };
-
-    const p3Img = new Image();
-    p3Img.src = portinari3Url;
-    p3Img.onload = () => {
-      portinari3ImgRef.current = p3Img;
-      checkLoaded();
-    };
-
-    const p4Img = new Image();
-    p4Img.src = portinari4Url;
-    p4Img.onload = () => {
-      portinari4ImgRef.current = p4Img;
-      checkLoaded();
-    };
-
-    const chImg = new Image();
-    chImg.src = chorinhoUrl;
-    chImg.onload = () => {
-      chorinhoImgRef.current = chImg;
-      checkLoaded();
-    };
-
-    const namImg = new Image();
-    namImg.src = namoradosUrl;
-    namImg.onload = () => {
-      namoradosImgRef.current = namImg;
-      checkLoaded();
-    };
-
-    const baiImg = new Image();
-    baiImg.src = baianaUrl;
-    baiImg.onload = () => {
-      baianaImgRef.current = baiImg;
-      checkLoaded();
-    };
-
-    const desImg = new Image();
-    desImg.src = descobrimentoUrl;
-    desImg.onload = () => {
-      descobrimentoImgRef.current = desImg;
-      checkLoaded();
-    };
-
-    const cafImg = new Image();
-    cafImg.src = cafeUrl;
-    cafImg.onload = () => {
-      cafeImgRef.current = cafImg;
-      checkLoaded();
-    };
+    masterpiecesList.forEach((m, idx) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = m.image;
+      img.onload = () => {
+        masterpieceImgsRef.current[idx] = img;
+        checkLoaded();
+      };
+    });
 
     function checkLoaded() {
+      const allMasterpiecesLoaded = masterpiecesList.every((_, idx) => masterpieceImgsRef.current[idx]);
       if (
         playerImgRef.current &&
         monsterImgRef.current &&
         bgImgRef.current &&
-        portinari1ImgRef.current &&
-        portinari2ImgRef.current &&
-        portinari3ImgRef.current &&
-        portinari4ImgRef.current &&
-        chorinhoImgRef.current &&
-        namoradosImgRef.current &&
-        baianaImgRef.current &&
-        descobrimentoImgRef.current &&
-        cafeImgRef.current
+        allMasterpiecesLoaded
       ) {
         loadedRef.current = true;
       }
@@ -349,15 +347,7 @@ function useGameImages() {
     playerImgFlipped: playerImgFlippedRef,
     monsterImg: monsterImgRef,
     bgImg: bgImgRef,
-    portinari1Img: portinari1ImgRef,
-    portinari2Img: portinari2ImgRef,
-    portinari3Img: portinari3ImgRef,
-    portinari4Img: portinari4ImgRef,
-    chorinhoImg: chorinhoImgRef,
-    namoradosImg: namoradosImgRef,
-    baianaImg: baianaImgRef,
-    descobrimentoImg: descobrimentoImgRef,
-    cafeImg: cafeImgRef,
+    masterpieceImgs: masterpieceImgsRef,
     loaded: loadedRef,
   };
 }
@@ -724,32 +714,7 @@ function useSounds() {
   return { playGameOver, playPoint, playAura, playLoss, playNextLevel, playVictory };
 }
 
-const completedMasterpieces: Record<number, { title: string; image: string; year: string; description: string }> = {
-  1: {
-    title: "Meninos Soltando Pipas",
-    image: portinari1Url,
-    year: "1947",
-    description: "Essa linda tela mostra as crianças livres brincando de empinar coloridas pipas sob o sol alegre de Brodowski!"
-  },
-  2: {
-    title: "Futebol em Brodowski",
-    image: portinari2Url,
-    year: "1935",
-    description: "Mostra a pura alegria das crianças jogando futebol de pé descalço no campinho de terra batida!"
-  },
-  3: {
-    title: "O Lavrador de Café",
-    image: portinari3Url,
-    year: "1934",
-    description: "A obra mais famosa de Cândido Portinari, homenageando com muito respeito e força o trabalhador brasileiro das plantações de café."
-  },
-  4: {
-    title: "A Esticada",
-    image: portinari4Url,
-    year: "1940",
-    description: "Demonstra o folclore e brincadeiras tradicionais que Portinari amava retratar, cheias de movimento e ritmo."
-  }
-};
+// Completed artwork showcase references are now mapped dynamically using masterpiecesList
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -763,7 +728,7 @@ export default function App() {
   const [auraSecondsLeft, setAuraSecondsLeft] = useState<number>(0);
 
   // Asset hooks
-  const { playerImg, playerImgFlipped, monsterImg, bgImg, portinari1Img, portinari2Img, portinari3Img, portinari4Img, chorinhoImg, namoradosImg, baianaImg, descobrimentoImg, cafeImg } = useGameImages();
+  const { playerImg, playerImgFlipped, monsterImg, bgImg, masterpieceImgs } = useGameImages();
   const themeMusic = useBackgroundTheme();
   const sounds = useSounds();
 
@@ -852,6 +817,7 @@ export default function App() {
   const activePowerRef = useRef<{ type: string; timer: number; radius: number; angle: number }>({ type: "", timer: 0, radius: 0, angle: 0 });
   const [powerPercent, setPowerPercent] = useState<number>(0);
   const powerPercentRef = useRef<number>(0);
+  const paintPotPowerCountRef = useRef<number>(0);
 
   // Sparking aura state references
   const hasAuraPowerRef = useRef<boolean>(false);
@@ -872,7 +838,7 @@ export default function App() {
 
   // Move to next level after showing award artwork
   const loadNextLevel = useCallback(() => {
-    if (currentLevelNumberRef.current < 5) {
+    if (currentLevelNumberRef.current < masterpiecesList.length) {
       currentLevelNumberRef.current += 1;
       activeLevelRef.current = Ki(currentLevelNumberRef.current);
       setTotalPaints(activeLevelRef.current.paints.length);
@@ -880,6 +846,7 @@ export default function App() {
       resetPlayer();
       // Reset power-up charges
       powerPercentRef.current = 0;
+      paintPotPowerCountRef.current = 0;
       setPowerPercent(0);
       activePowerRef.current = { type: "", timer: 0, radius: 0, angle: 0 };
       setCompletedLevel(null);
@@ -908,6 +875,7 @@ export default function App() {
     resetPlayer();
     // Reset power percentage
     powerPercentRef.current = 0;
+    paintPotPowerCountRef.current = 0;
     setPowerPercent(0);
     activePowerRef.current = { type: "", timer: 0, radius: 0, angle: 0 };
     // Clear particles on restart
@@ -987,6 +955,7 @@ export default function App() {
     setLives(livesRef.current);
     // Reset power percentage on life loss
     powerPercentRef.current = 0;
+    paintPotPowerCountRef.current = 0;
     setPowerPercent(0);
     activePowerRef.current = { type: "", timer: 0, radius: 0, angle: 0 };
 
@@ -1061,60 +1030,24 @@ export default function App() {
 
       // Draw Hung Classical Paintings in the scenery!
       const drawSceneryPaintings = () => {
-        const p1 = portinari1Img.current;
-        const p2 = portinari2Img.current;
-        const p3 = portinari3Img.current;
-        const p4 = portinari4Img.current;
-        const ch = chorinhoImg.current;
-        const nam = namoradosImg.current;
-        const bai = baianaImg.current;
-        const des = descobrimentoImg.current;
-        const caf = cafeImg.current;
+        const masterpieceImgsList = masterpieceImgs.current;
+        const items: Array<{ x: number; y: number; w: number; h: number; img: HTMLImageElement | null; label: string }> = [];
 
-        // Custom coordinates and configurations to distribute all 9 masterpiece paintings beautifully in each level to fill and populate the scenery with ONLY genuine Portinari works
-        let items: Array<{ x: number; y: number; w: number; h: number; img: HTMLImageElement | null; label: string }> = [];
+        const xPositions = [250, 580, 910, 1240, 1570];
+        const yPositions = [120, 150, 110, 140, 120];
 
-        if (currentLevelNumberRef.current === 1) {
-          items = [
-            { x: 250, y: 120, w: 220, h: 165, img: p1, label: "Meninos Soltando Pipas (1947)" },
-            { x: 580, y: 150, w: 220, h: 165, img: ch, label: "Chorinho (1942)" },
-            { x: 910, y: 110, w: 220, h: 165, img: nam, label: "Os Namorados (1940)" },
-            { x: 1240, y: 140, w: 220, h: 165, img: p4, label: "A Esticada (1940)" },
-            { x: 1570, y: 120, w: 220, h: 165, img: p2, label: "Futebol em Brodowski (1935)" },
-          ];
-        } else if (currentLevelNumberRef.current === 2) {
-          items = [
-            { x: 220, y: 140, w: 220, h: 165, img: p2, label: "Futebol em Brodowski (1935)" },
-            { x: 550, y: 110, w: 220, h: 165, img: bai, label: "Baiana (1953)" },
-            { x: 880, y: 150, w: 220, h: 165, img: p4, label: "A Esticada (1940)" },
-            { x: 1210, y: 125, w: 220, h: 165, img: des, label: "Descobrimento da Terra (1941)" },
-            { x: 1540, y: 150, w: 220, h: 165, img: p3, label: "O Lavrador de Café (1934)" },
-          ];
-        } else if (currentLevelNumberRef.current === 3) {
-          items = [
-            { x: 240, y: 110, w: 220, h: 165, img: p3, label: "O Lavrador de Café (1934)" },
-            { x: 570, y: 140, w: 220, h: 165, img: caf, label: "O Café (1935)" },
-            { x: 900, y: 110, w: 220, h: 165, img: p4, label: "A Esticada (1940)" },
-            { x: 1230, y: 135, w: 220, h: 165, img: nam, label: "Os Namorados (1940)" },
-            { x: 1560, y: 110, w: 220, h: 165, img: p1, label: "Meninos Soltando Pipas (1947)" },
-          ];
-        } else if (currentLevelNumberRef.current === 4) {
-          items = [
-            { x: 210, y: 130, w: 220, h: 165, img: bai, label: "Baiana (1953)" },
-            { x: 540, y: 150, w: 220, h: 165, img: caf, label: "O Café (1935)" },
-            { x: 870, y: 115, w: 220, h: 165, img: ch, label: "Chorinho (1942)" },
-            { x: 1200, y: 140, w: 220, h: 165, img: p4, label: "A Esticada (1940)" },
-            { x: 1530, y: 120, w: 220, h: 165, img: des, label: "Descobrimento da Terra (1941)" },
-          ];
-        } else {
-          items = [
-            { x: 200, y: 110, w: 220, h: 165, img: ch, label: "Chorinho (1942)" },
-            { x: 510, y: 140, w: 220, h: 165, img: des, label: "Descobrimento da Terra (1941)" },
-            { x: 820, y: 110, w: 220, h: 165, img: caf, label: "O Café (1935)" },
-            { x: 1130, y: 135, w: 220, h: 165, img: bai, label: "Baiana (1953)" },
-            { x: 1440, y: 110, w: 220, h: 165, img: nam, label: "Os Namorados (1940)" },
-            { x: 1750, y: 140, w: 220, h: 165, img: p1, label: "Meninos Soltando Pipas (1947)" },
-          ];
+        for (let i = 0; i < 5; i++) {
+          const masterpieceIndex = (currentLevelNumberRef.current - 1 + i) % masterpiecesList.length;
+          const masterpiece = masterpiecesList[masterpieceIndex];
+          const img = masterpieceImgsList[masterpieceIndex] || null;
+          items.push({
+            x: xPositions[i],
+            y: yPositions[i],
+            w: 220,
+            h: 165,
+            img,
+            label: `${masterpiece.title} (${masterpiece.year})`
+          });
         }
 
         items.forEach((item) => {
@@ -1213,30 +1146,10 @@ export default function App() {
       ctx.fillRect(goal.x + 5, goal.y + 10, goal.width - 10, goal.height - 30);
 
       // Draw Selected Portinari Painting representing the level!
-      const ch = chorinhoImg.current;
-      const nam = namoradosImg.current;
-      const bai = baianaImg.current;
-      const des = descobrimentoImg.current;
-      const caf = cafeImg.current;
-
-      let currentPortinariImg: HTMLImageElement | null = null;
-      let paintingTitleText = "";
-      if (currentLevelNumberRef.current === 1) {
-        currentPortinariImg = ch;
-        paintingTitleText = "Chorinho (1942)";
-      } else if (currentLevelNumberRef.current === 2) {
-        currentPortinariImg = nam;
-        paintingTitleText = "Os Namorados (1940)";
-      } else if (currentLevelNumberRef.current === 3) {
-        currentPortinariImg = bai;
-        paintingTitleText = "Baiana (1953)";
-      } else if (currentLevelNumberRef.current === 4) {
-        currentPortinariImg = des;
-        paintingTitleText = "Descobrimento da Terra (1941)";
-      } else {
-        currentPortinariImg = caf;
-        paintingTitleText = "O Café (1935)";
-      }
+      const currentMasterpieceIndex = (currentLevelNumberRef.current - 1) % masterpiecesList.length;
+      const currentMasterpiece = masterpiecesList[currentMasterpieceIndex];
+      const currentPortinariImg = masterpieceImgs.current[currentMasterpieceIndex] || null;
+      const paintingTitleText = `${currentMasterpiece.title} (${currentMasterpiece.year})`;
 
       const totalP = level.paints.length;
       const collectedP = level.paints.filter(p => p.collected).length;
@@ -1559,7 +1472,7 @@ export default function App() {
           ctx.translate(px, py);
           
           const maxRadius = 850;
-          const expansionProgress = Math.min(1, (2400 - actPower.timer) / 120);
+          const expansionProgress = Math.min(1, (600 - actPower.timer) / 120);
           actPower.radius = expansionProgress * maxRadius;
           const curRadius = actPower.radius;
 
@@ -1622,7 +1535,7 @@ export default function App() {
 
       ctx.restore();
     },
-    [playerImg, playerImgFlipped, monsterImg, bgImg, portinari1Img, portinari2Img, portinari3Img, portinari4Img, chorinhoImg, namoradosImg, baianaImg, descobrimentoImg, cafeImg]
+    [playerImg, playerImgFlipped, monsterImg, bgImg, masterpieceImgs]
   );
 
   // Physics Updates and Collisions Loop
@@ -1635,7 +1548,7 @@ export default function App() {
     const actPower = activePowerRef.current;
     if (actPower.type !== "") {
       actPower.timer--;
-      powerPercentRef.current = (actPower.timer / 2400) * 100;
+      powerPercentRef.current = (actPower.timer / 600) * 100;
       setPowerPercent(Math.round(powerPercentRef.current));
 
       if (actPower.timer <= 0) {
@@ -1645,38 +1558,30 @@ export default function App() {
       }
     } else {
       if (powerPercentRef.current >= 99.9) {
-        // "Os poderes precisam ser carregados na presença ameaçadora dos monstros, senão são gastos no cenário vazio e perdem a função."
-        // Only activate superpower if there is an active (not squashed) monster nearby (threatening distance e.g., within 1100px range)
-        const hasThreatNearby = level.monsters.some((m) => {
-          if (m.x < -500) return false; // Already defeated/squashed
-          const dist = Math.abs(m.x - player.x);
-          return dist <= 1100; // Inside threat/screen action radius
-        });
-
-        if (hasThreatNearby) {
-          const lvlNo = currentLevelNumberRef.current;
-          let type = "spiral";
-          if (lvlNo === 1) type = "spiral";
-          else if (lvlNo === 2) type = "shield";
-          else if (lvlNo === 3) type = "superforce";
-          else if (lvlNo === 4) type = "sphere";
-          else {
-            const types = ["spiral", "shield", "superforce", "sphere"];
-            type = types[(lvlNo - 1) % 4];
-          }
-
-          activePowerRef.current = {
-            type,
-            timer: 2400, // 40 seconds of active superpower (2400 frames at ~60fps)
-            radius: 0,
-            angle: 0
-          };
-
-          // Trigger major activation fireworks particles centered around Candinho
-          spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 45, "celebration", "#fbbf24");
-          // Play superpower activation point sound
-          sounds.playPoint();
+        const lvlNo = currentLevelNumberRef.current;
+        let type = "spiral";
+        if (lvlNo === 1) type = "spiral";
+        else if (lvlNo === 2) type = "shield";
+        else if (lvlNo === 3) type = "superforce";
+        else if (lvlNo === 4) type = "sphere";
+        else {
+          const types = ["spiral", "shield", "superforce", "sphere"];
+          type = types[(lvlNo - 1) % 4];
         }
+
+        activePowerRef.current = {
+          type,
+          timer: 600, // 10 seconds of active superpower (600 frames at ~60fps)
+          radius: 0,
+          angle: 0
+        };
+
+        paintPotPowerCountRef.current = 0;
+
+        // Trigger major activation fireworks particles centered around Candinho
+        spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 45, "celebration", "#fbbf24");
+        // Play superpower activation point sound
+        sounds.playPoint();
       }
     }
 
@@ -1846,11 +1751,10 @@ export default function App() {
         collectedCount++;
         sounds.playPoint();
 
-        // 🎨 Charge superpower bar upon collection
+        // 🎨 Charge superpower bar upon collection - 7 paint pots/potes fills to 100%
         if (activePowerRef.current.type === "") {
-          const totalLvlPaints = level.paints.length || 5;
-          const reward = 100 / totalLvlPaints;
-          powerPercentRef.current = Math.min(100, powerPercentRef.current + reward);
+          paintPotPowerCountRef.current = Math.min(7, paintPotPowerCountRef.current + 1);
+          powerPercentRef.current = (paintPotPowerCountRef.current / 7) * 100;
           setPowerPercent(Math.round(powerPercentRef.current));
         }
 
@@ -2009,7 +1913,7 @@ export default function App() {
       player.y + player.height > goal.y &&
       player.y < goal.y + goal.height
     ) {
-      if (currentLevelNumberRef.current < 5) {
+      if (currentLevelNumberRef.current < masterpiecesList.length) {
         // Show painting in its beautiful, full restoration stage
         setCompletedLevel(currentLevelNumberRef.current);
         setGameState("level_completed_showcase");
@@ -2245,48 +2149,54 @@ export default function App() {
           </div>
 
           {/* Overlay for Level Completed Easel Masterpiece Restoration Showcase */}
-          {gameState === "level_completed_showcase" && completedLevel && (
-            <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-[#050510]/95 backdrop-blur-xl animate-fade-in">
-              <div className="relative max-w-2xl w-full bg-[#11112a] border-4 border-[#ffb300] rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center gap-5 my-auto max-h-[95vh] overflow-y-auto">
-                {/* Sparkle Header */}
-                <div className="space-y-1">
-                  <span className="text-yellow-400 text-sm md:text-base font-sans font-bold uppercase tracking-wider block">
-                    ✨ Obra de Arte Restaurada! ✨
-                  </span>
-                  <h2 className="text-white text-3xl md:text-4xl font-display font-black tracking-tight drop-shadow">
-                    {completedMasterpieces[completedLevel]?.title} ({completedMasterpieces[completedLevel]?.year})
-                  </h2>
-                </div>
+          {gameState === "level_completed_showcase" && completedLevel !== null && (
+            (() => {
+              const completedArt = masterpiecesList[completedLevel - 1];
+              if (!completedArt) return null;
+              return (
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-[#050510]/95 backdrop-blur-xl animate-fade-in">
+                  <div className="relative max-w-2xl w-full bg-[#11112a] border-4 border-[#ffb300] rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center gap-5 my-auto max-h-[95vh] overflow-y-auto">
+                    {/* Sparkle Header */}
+                    <div className="space-y-1">
+                      <span className="text-yellow-400 text-sm md:text-base font-sans font-bold uppercase tracking-wider block">
+                        ✨ Obra de Arte Restaurada! ✨
+                      </span>
+                      <h2 className="text-white text-3xl md:text-4xl font-display font-black tracking-tight drop-shadow">
+                        {completedArt.title} ({completedArt.year})
+                      </h2>
+                    </div>
 
-                {/* The Award Masterpiece Drawing Frame */}
-                <div className="relative group w-full aspect-video rounded-2xl overflow-hidden border-4 border-amber-900/60 bg-[#151525] shadow-inner flex items-center justify-center">
-                  <img
-                    src={completedMasterpieces[completedLevel]?.image}
-                    alt={completedMasterpieces[completedLevel]?.title}
-                    className="max-h-full max-w-full object-contain drop-shadow-md rounded-lg transition-transform duration-500 scale-100"
-                    referrerPolicy="no-referrer"
-                  />
-                  
-                  {/* Glowing ambient background shadow */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white text-xs md:text-sm italic font-sans text-center">
-                    Cândido Portinari, {completedMasterpieces[completedLevel]?.year}
+                    {/* The Award Masterpiece Drawing Frame */}
+                    <div className="relative group w-full aspect-video rounded-2xl overflow-hidden border-4 border-amber-900/60 bg-[#151525] shadow-inner flex items-center justify-center">
+                      <img
+                        src={completedArt.image}
+                        alt={completedArt.title}
+                        className="max-h-full max-w-full object-contain drop-shadow-md rounded-lg transition-transform duration-500 scale-100"
+                        referrerPolicy="no-referrer"
+                      />
+                      
+                      {/* Glowing ambient background shadow */}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white text-xs md:text-sm italic font-sans text-center">
+                        Cândido Portinari, {completedArt.year}
+                      </div>
+                    </div>
+
+                    {/* Kid-friendly storytelling description */}
+                    <p className="text-white/95 text-sm md:text-base max-w-lg leading-relaxed font-sans font-medium px-2">
+                      {completedArt.description}
+                    </p>
+
+                    {/* Action button to load next level */}
+                    <button
+                      onClick={loadNextLevel}
+                      className="bg-gradient-to-r from-yellow-500 via-amber-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 active:scale-95 text-white font-sans font-black text-lg md:text-xl py-4 px-10 rounded-full shadow-lg shadow-yellow-500/20 transition-all duration-200 cursor-pointer transform hover:scale-105"
+                    >
+                      Próxima Fase! 🚀
+                    </button>
                   </div>
                 </div>
-
-                {/* Kid-friendly storytelling description */}
-                <p className="text-white/95 text-sm md:text-base max-w-lg leading-relaxed font-sans font-medium px-2">
-                  {completedMasterpieces[completedLevel]?.description}
-                </p>
-
-                {/* Action button to load next level */}
-                <button
-                  onClick={loadNextLevel}
-                  className="bg-gradient-to-r from-yellow-500 via-amber-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 active:scale-95 text-white font-sans font-black text-lg md:text-xl py-4 px-10 rounded-full shadow-lg shadow-yellow-500/20 transition-all duration-200 cursor-pointer transform hover:scale-105"
-                >
-                  Próxima Fase! 🚀
-                </button>
-              </div>
-            </div>
+              );
+            })()
           )}
 
           {/* Overlay for Victory/Game Over */}
