@@ -726,6 +726,7 @@ export default function App() {
   const [hasAuraPower, setHasAuraPower] = useState<boolean>(false);
   const [monstersKilledCount, setMonstersKilledCount] = useState<number>(0);
   const [auraSecondsLeft, setAuraSecondsLeft] = useState<number>(0);
+  const [showAuraFlash, setShowAuraFlash] = useState<boolean>(false);
 
   // Asset hooks
   const { playerImg, playerImgFlipped, monsterImg, bgImg, masterpieceImgs } = useGameImages();
@@ -993,6 +994,19 @@ export default function App() {
       particlesRef.current = [];
     }
   }, [resetPlayer, themeMusic, sounds]);
+
+  // Handle the "Farmando Aura" quick flash notice effect
+  useEffect(() => {
+    if (hasAuraPower) {
+      setShowAuraFlash(true);
+      const timer = setTimeout(() => {
+        setShowAuraFlash(false);
+      }, 2500); // Fades away after 2.5 seconds
+      return () => clearTimeout(timer);
+    } else {
+      setShowAuraFlash(false);
+    }
+  }, [hasAuraPower]);
 
   // Drawing Canvas Elements
   const draw = useCallback(
@@ -1368,10 +1382,10 @@ export default function App() {
             const startAngle = (i * Math.PI * 2) / 5;
             ctx.beginPath();
             ctx.strokeStyle = spiralColors[i];
-            ctx.lineWidth = 10;
+            ctx.lineWidth = 6;
             ctx.lineCap = "round";
-            for (let theta = 0; theta < Math.PI * 2; theta += 0.15) {
-              const r = 20 + theta * 35; // Expand radius outwards
+            for (let theta = 0; theta < Math.PI * 1.5; theta += 0.2) {
+              const r = 25 + theta * 12; // Radius starts at 25px and reaches max ~80px (perfect ratio)
               const x = Math.cos(startAngle + theta) * r;
               const y = Math.sin(startAngle + theta) * r;
               if (theta === 0) ctx.moveTo(x, y);
@@ -1780,7 +1794,7 @@ export default function App() {
         const dist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2);
 
         let powerHits = false;
-        if (actPower.type === "spiral" && dist < 230) {
+        if (actPower.type === "spiral" && dist < 120) {
           powerHits = true;
         } else if (actPower.type === "shield" && dist < 170) {
           powerHits = true;
@@ -1938,12 +1952,21 @@ export default function App() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = Et;
-    canvas.height = vn;
+    // Mobile / WebView performance scaling setup
+    const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    const backingWidth = isMobile ? 1280 : 1920;
+    const backingHeight = isMobile ? 720 : 1080;
+
+    canvas.width = backingWidth;
+    canvas.height = backingHeight;
 
     const gameTick = () => {
       updatePhysics();
+      ctx.save();
+      // Scale everything from virtual size (1920x1080) to the lighter physical size
+      ctx.scale(backingWidth / Et, backingHeight / vn);
       draw(ctx);
+      ctx.restore();
       requestRef.current = requestAnimationFrame(gameTick);
     };
 
@@ -1994,158 +2017,160 @@ export default function App() {
       {gameState === "opening" ? (
         <OpeningScreen onStart={startGame} />
       ) : (
-        <div className="fixed inset-0 bg-[#070711] select-none overflow-hidden touch-none flex flex-col items-center justify-center p-1 sm:p-4">
+        <div className="fixed inset-0 bg-[#070711] select-none overflow-hidden touch-none flex flex-col items-center justify-center p-0 md:p-4">
           
           {/* Adaptable 16:9 Canvas Container */}
           <div 
-            className="relative w-full h-full max-w-full max-h-full flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#111126] to-[#040409] rounded-2xl border-4 border-accent/30 shadow-2xl"
+            className="relative w-full h-full max-w-full max-h-full flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#111126] to-[#040409] rounded-none border-0 md:rounded-2xl md:border-4 border-accent/30 shadow-2xl"
             style={{
-              maxWidth: "min(100vw - 12px, (100vh - 12px) * 16 / 9)",
+              maxWidth: "min(100vw, 100vh * 16 / 9)",
               height: "auto",
               aspectRatio: "16 / 9",
             }}
           >
+            {/* Game Canvas */}
             <canvas ref={canvasRef} className="block w-full h-full" style={{ imageRendering: "auto" }} />
-          </div>
 
-          {/* Stats Bar */}
-          <div className="fixed top-3 left-3 bg-[#0d0d1f]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-accent font-display text-sm md:text-lg text-accent z-50 pointer-events-none flex items-center gap-3.5 shadow-lg">
-            <img
-              src="https://i.imgur.com/UDl1c5j.png"
-              alt="Candinho"
-              className="w-7 h-7 rounded-full border border-accent/70 object-cover"
-              referrerPolicy="no-referrer"
-            />
-            <span className="w-px h-4 bg-accent/30" />
-            <span className="flex items-center gap-1">❤️ <b className="font-sans text-white">{lives}</b></span>
-            <span className="w-px h-4 bg-accent/30" />
-            <span className="flex items-center gap-1">🎨 <b className="font-sans text-white">{paintsCollected}/{totalPaints}</b></span>
-            <span className="w-px h-4 bg-accent/30" />
-            <span className="text-xs bg-accent/20 px-2.5 py-0.5 rounded-full text-white font-sans font-medium">Nível {currentLevelNumberRef.current}</span>
-            <span className="w-px h-4 bg-accent/30" />
-            <span className="flex items-center gap-1 select-none">
-              {hasAuraPower ? (
-                <span className="text-xs bg-yellow-400 text-black px-2.5 py-0.5 rounded-full font-sans font-black tracking-wide animate-pulse shadow-md shadow-yellow-500/35">
-                  🌟 AURA: {auraSecondsLeft}s
-                </span>
-              ) : (
-                <span className="text-xs text-yellow-300/90 font-sans font-semibold flex items-center gap-1 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/30">
-                  ✨ Aura: {monstersKilledCount}/3
-                </span>
-              )}
-            </span>
-          </div>
-
-          {/* Farmando Aura Large Screen Title / Badge */}
-          {hasAuraPower && (
-            <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-yellow-400 text-black border-2 border-amber-800 rounded-full py-1.5 px-6 font-display font-black text-xs md:text-base shadow-2xl animate-bounce z-45 flex items-center gap-2 select-none">
-              <span>🌟</span>
-              <span>FARMANDO AURA! ({auraSecondsLeft}s)</span>
-              <span>🌟</span>
-            </div>
-          )}
-
-          {/* Superpower Charge Meter HUD */}
-          <div className="fixed top-3 right-3 bg-[#0d0d1f]/85 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-accent/40 z-50 pointer-events-none flex flex-col items-start gap-1 select-none shadow-xl w-60 md:w-64">
-            <div className="w-full flex justify-between items-center">
-              <span className="text-white text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-1">
-                ⚡ {(() => {
-                  const lvlNo = currentLevelNumberRef.current;
-                  if (lvlNo === 1) return "Espiral de Tinta";
-                  if (lvlNo === 2) return "Campo de Força";
-                  if (lvlNo === 3) return "Superforça";
-                  if (lvlNo === 4) return "Esfera de Energia";
-                  return "Espiral de Tinta";
-                })()}
-              </span>
-              <span className="text-xs font-mono text-white/95">
-                {powerPercent}%
-              </span>
-            </div>
-            
-            {/* Visual charge bar */}
-            <div className="relative w-full h-2.5 bg-white/10 rounded-full overflow-hidden border border-white/5">
-              <div 
-                className={`h-full rounded-full transition-all duration-100 ease-out ${
-                  powerPercent >= 100 
-                    ? "bg-gradient-to-r from-yellow-400 via-pink-500 to-red-500 animate-pulse shadow-lg shadow-yellow-500/50" 
-                    : "bg-gradient-to-r from-teal-400 via-cyan-400 to-sky-500"
-                }`}
-                style={{ width: `${powerPercent}%` }}
+            {/* Stats Bar */}
+            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#0d0d1f]/85 backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full border border-accent font-display text-[11px] sm:text-xs md:text-sm lg:text-base text-accent z-50 pointer-events-none flex items-center gap-2 sm:gap-3.5 shadow-lg select-none">
+              <img
+                src="https://i.imgur.com/UDl1c5j.png"
+                alt="Candinho"
+                className="w-5 h-5 sm:w-7 sm:h-7 rounded-full border border-accent/70 object-cover"
+                referrerPolicy="no-referrer"
               />
+              <span className="w-px h-3 sm:h-4 bg-accent/30" />
+              <span className="flex items-center gap-0.5 sm:gap-1">❤️ <b className="font-sans text-white">{lives}</b></span>
+              <span className="w-px h-3 sm:h-4 bg-accent/30" />
+              <span className="flex items-center gap-0.5 sm:gap-1">🎨 <b className="font-sans text-white">{paintsCollected}/{totalPaints}</b></span>
+              <span className="w-px h-3 sm:h-4 bg-accent/30" />
+              <span className="text-[9px] sm:text-xs bg-accent/25 px-1.5 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-white font-sans font-medium whitespace-nowrap">Nível {currentLevelNumberRef.current}</span>
+              <span className="w-px h-3 sm:h-4 bg-accent/30" />
+              <span className="flex items-center gap-1 select-none">
+                {hasAuraPower ? (
+                  <span className="text-[9px] sm:text-xs bg-yellow-400 text-black px-1.5 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full font-sans font-black tracking-wide animate-pulse shadow-md shadow-yellow-500/35">
+                    🌟 AURA ATIVA
+                  </span>
+                ) : (
+                  <span className="text-[9px] sm:text-xs text-yellow-300/95 font-sans font-semibold flex items-center gap-0.5 sm:gap-1 bg-yellow-400/10 px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-full border border-yellow-400/30 whitespace-nowrap">
+                    ✨ Aura: {monstersKilledCount}/3
+                  </span>
+                )}
+              </span>
             </div>
-            
-            {/* Helper status description */}
-            <span className="text-[10px] text-white/60 font-sans tracking-tight">
-              {powerPercent >= 100 
-                ? "🚀 PODER ATIVADO! Vencendo monstros!" 
-                : "Pegue tintas para carregar"}
-            </span>
-          </div>
 
-          {/* Touch Directional Controls for Left/Right movement */}
-          <div className="fixed bottom-4 left-4 flex gap-3 z-50">
-            <button
-              className="bg-[#0d0d1f]/85 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border-2 border-accent/70 w-16 h-16 md:w-20 md:h-20 text-xl md:text-2xl rounded-full font-display text-accent active:scale-95 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
-              onTouchStart={(e) => {
-                e.preventDefault();
-                pressControl("left");
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                releaseControl("left");
-              }}
-              onMouseDown={() => pressControl("left")}
-              onMouseUp={() => releaseControl("left")}
-              onMouseLeave={() => releaseControl("left")}
-            >
-              ◀
-            </button>
-            <button
-              className="bg-[#0d0d1f]/85 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border-2 border-accent/70 w-16 h-16 md:w-20 md:h-20 text-xl md:text-2xl rounded-full font-display text-accent active:scale-95 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
-              onTouchStart={(e) => {
-                e.preventDefault();
-                pressControl("right");
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                releaseControl("right");
-              }}
-              onMouseDown={() => pressControl("right")}
-              onMouseUp={() => releaseControl("right")}
-              onMouseLeave={() => releaseControl("right")}
-            >
-              ▶
-            </button>
-          </div>
+            {/* Farmando Aura Large Screen Title / Badge - Flash warning that disappears quickly */}
+            {showAuraFlash && (
+              <div className="absolute top-16 sm:top-20 md:top-24 left-1/2 -translate-x-1/2 bg-yellow-400 text-black border sm:border-2 border-amber-800 rounded-full py-1 px-4 sm:py-1.5 sm:px-6 font-display font-black text-[10px] sm:text-xs md:text-sm lg:text-base shadow-2xl animate-bounce z-40 flex items-center gap-1 sm:gap-2 select-none pointer-events-none transform scale-105 sm:scale-100">
+                <span>🌟</span>
+                <span>FARMANDO AURA!</span>
+                <span>🌟</span>
+              </div>
+            )}
 
-          {/* Touch Jump Button */}
-          <div className="fixed bottom-4 right-4 flex items-center gap-3 z-50">
-            {/* Quick Level Reset Button placed on the bottom right for accessibility */}
-            <button
-              className="bg-[#0d0d1f]/70 hover:bg-[#151533]/80 backdrop-blur-md border border-accent/50 w-12 h-12 rounded-full font-display text-accent active:scale-95 transition-all cursor-pointer flex items-center justify-center shadow-lg"
-              onClick={startGame}
-              title="Resetar Jogo"
-            >
-              🔄
-            </button>
+            {/* Superpower Charge Meter HUD */}
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-[#0d0d1f]/90 backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl sm:rounded-2xl border border-accent/40 z-50 pointer-events-none flex flex-col items-start gap-0.5 sm:gap-1 select-none shadow-xl w-32 sm:w-44 md:w-56 lg:w-64">
+              <div className="w-full flex justify-between items-center">
+                <span className="text-white text-[9px] sm:text-[10px] md:text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-0.5 sm:gap-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                  ⚡ {(() => {
+                    const lvlNo = currentLevelNumberRef.current;
+                    if (lvlNo === 1) return "Espiral de Tinta";
+                    if (lvlNo === 2) return "Campo de Força";
+                    if (lvlNo === 3) return "Superforça";
+                    if (lvlNo === 4) return "Esfera de Energia";
+                    return "Espiral de Tinta";
+                  })()}
+                </span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs font-mono text-white/95 ml-1">
+                  {powerPercent}%
+                </span>
+              </div>
+              
+              {/* Visual charge bar */}
+              <div className="relative w-full h-1.5 sm:h-2 md:h-2.5 bg-white/10 rounded-full overflow-hidden border border-white/5">
+                <div 
+                  className={`h-full rounded-full transition-all duration-100 ease-out ${
+                    powerPercent >= 100 
+                      ? "bg-gradient-to-r from-yellow-400 via-pink-500 to-red-500 animate-pulse shadow-lg shadow-yellow-500/50" 
+                      : "bg-gradient-to-r from-teal-400 via-cyan-400 to-sky-500"
+                  }`}
+                  style={{ width: `${powerPercent}%` }}
+                />
+              </div>
+              
+              {/* Helper status description */}
+              <span className="text-[7px] sm:text-[9px] md:text-[10px] text-white/60 font-sans tracking-tight whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                {powerPercent >= 100 
+                  ? "🚀 ATIVADO!" 
+                  : "Pegue tintas"}
+              </span>
+            </div>
 
-            <button
-              className="bg-[#0d0d1f]/85 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border-2 border-accent/80 w-18 h-18 md:w-22 md:h-22 text-2xl md:text-3xl rounded-full font-display text-accent active:scale-95 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
-              onTouchStart={(e) => {
-                e.preventDefault();
-                pressControl("up");
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                releaseControl("up");
-              }}
-              onMouseDown={() => pressControl("up")}
-              onMouseUp={() => releaseControl("up")}
-              onMouseLeave={() => releaseControl("up")}
-            >
-              ▲
-            </button>
+            {/* Touch Controls - Left / Right movement */}
+            <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 flex gap-2 sm:gap-3.5 z-50">
+              <button
+                className="bg-[#0d0d1f]/80 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border border-accent/60 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-sm sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  pressControl("left");
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  releaseControl("left");
+                }}
+                onMouseDown={() => pressControl("left")}
+                onMouseUp={() => releaseControl("left")}
+                onMouseLeave={() => releaseControl("left")}
+              >
+                ◀
+              </button>
+              <button
+                className="bg-[#0d0d1f]/80 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border border-accent/60 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-sm sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  pressControl("right");
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  releaseControl("right");
+                }}
+                onMouseDown={() => pressControl("right")}
+                onMouseUp={() => releaseControl("right")}
+                onMouseLeave={() => releaseControl("right")}
+              >
+                ▶
+              </button>
+            </div>
+
+            {/* Touch Jump Button & Scale controls */}
+            <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 flex items-center gap-2 sm:gap-3.5 z-50">
+              {/* Quick Level Reset Button placed on the bottom right for accessibility */}
+              <button
+                className="bg-[#0d0d1f]/75 hover:bg-[#151533]/85 backdrop-blur-md border border-accent/50 w-9 h-9 sm:w-12 sm:h-12 rounded-full text-xs sm:text-sm md:text-base font-display text-accent active:scale-90 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                onClick={startGame}
+                title="Resetar Jogo"
+              >
+                🔄
+              </button>
+
+              <button
+                className="bg-[#0d0d1f]/80 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border border-accent/70 w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22 text-lg sm:text-2xl md:text-3xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  pressControl("up");
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  releaseControl("up");
+                }}
+                onMouseDown={() => pressControl("up")}
+                onMouseUp={() => releaseControl("up")}
+                onMouseLeave={() => releaseControl("up")}
+              >
+                ▲
+              </button>
+            </div>
+
           </div>
 
           {/* Overlay for Level Completed Easel Masterpiece Restoration Showcase */}
