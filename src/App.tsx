@@ -2032,7 +2032,7 @@ export default function App() {
             <canvas ref={canvasRef} className="block w-full h-full" style={{ imageRendering: "auto" }} />
 
             {/* Stats Bar */}
-            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#0d0d1f]/85 backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full border border-accent font-display text-[11px] sm:text-xs md:text-sm lg:text-base text-accent z-50 pointer-events-none flex items-center gap-2 sm:gap-3.5 shadow-lg select-none">
+            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#0d0d1f]/40 hover:bg-[#0d0d1f]/90 active:bg-[#0d0d1f]/95 backdrop-blur-sm hover:backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full border border-accent/30 hover:border-accent/80 font-display text-[11px] sm:text-xs md:text-sm lg:text-base text-accent/70 hover:text-accent z-50 pointer-events-auto flex items-center gap-2 sm:gap-3.5 shadow-md hover:shadow-xl select-none opacity-40 sm:opacity-75 hover:opacity-100 active:opacity-100 transition-all duration-300">
               <img
                 src="https://i.imgur.com/UDl1c5j.png"
                 alt="Candinho"
@@ -2069,7 +2069,7 @@ export default function App() {
             )}
 
             {/* Superpower Charge Meter HUD */}
-            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-[#0d0d1f]/90 backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl sm:rounded-2xl border border-accent/40 z-50 pointer-events-none flex flex-col items-start gap-0.5 sm:gap-1 select-none shadow-xl w-32 sm:w-44 md:w-56 lg:w-64">
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-[#0d0d1f]/40 hover:bg-[#0d0d1f]/90 active:bg-[#0d0d1f]/95 backdrop-blur-sm hover:backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl sm:rounded-2xl border border-accent/20 hover:border-accent/80 z-50 pointer-events-auto flex flex-col items-start gap-0.5 sm:gap-1 select-none shadow-md hover:shadow-xl w-32 sm:w-44 md:w-56 lg:w-64 opacity-40 sm:opacity-75 hover:opacity-100 active:opacity-100 transition-all duration-300">
               <div className="w-full flex justify-between items-center">
                 <span className="text-white text-[9px] sm:text-[10px] md:text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-0.5 sm:gap-1 whitespace-nowrap overflow-hidden text-ellipsis">
                   ⚡ {(() => {
@@ -2107,9 +2107,9 @@ export default function App() {
             </div>
 
             {/* Touch Controls - Left / Right movement */}
-            <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 flex gap-2 sm:gap-3.5 z-50">
+            <div className="absolute bottom-1 left-1 sm:bottom-4 sm:left-4 flex gap-1.5 sm:gap-3.5 z-50">
               <button
-                className="bg-[#0d0d1f]/80 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border border-accent/60 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-sm sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                className="bg-[#0d0d1f]/50 hover:bg-[#151533]/80 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/40 w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 text-xs sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
                 onTouchStart={(e) => {
                   e.preventDefault();
                   pressControl("left");
@@ -2125,7 +2125,7 @@ export default function App() {
                 ◀
               </button>
               <button
-                className="bg-[#0d0d1f]/80 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border border-accent/60 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-sm sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                className="bg-[#0d0d1f]/50 hover:bg-[#151533]/80 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/40 w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 text-xs sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
                 onTouchStart={(e) => {
                   e.preventDefault();
                   pressControl("right");
@@ -2143,10 +2143,10 @@ export default function App() {
             </div>
 
             {/* Touch Jump Button & Scale controls */}
-            <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 flex items-center gap-2 sm:gap-3.5 z-50">
+            <div className="absolute bottom-1 right-1 sm:bottom-4 sm:right-4 flex items-center gap-1.5 sm:gap-3.5 z-50">
               {/* Quick Level Reset Button placed on the bottom right for accessibility */}
               <button
-                className="bg-[#0d0d1f]/75 hover:bg-[#151533]/85 backdrop-blur-md border border-accent/50 w-9 h-9 sm:w-12 sm:h-12 rounded-full text-xs sm:text-sm md:text-base font-display text-accent active:scale-90 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                className="bg-[#0d0d1f]/45 hover:bg-[#151533]/75 backdrop-blur-sm border border-accent/30 w-8 h-8 sm:w-12 sm:h-12 text-[10px] sm:text-sm font-display text-accent active:scale-90 transition-all cursor-pointer flex items-center justify-center shadow-lg"
                 onClick={startGame}
                 title="Resetar Jogo"
               >
@@ -2154,7 +2154,7 @@ export default function App() {
               </button>
 
               <button
-                className="bg-[#0d0d1f]/80 hover:bg-[#151533]/90 active:bg-accent active:text-accent-foreground backdrop-blur-md border border-accent/70 w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22 text-lg sm:text-2xl md:text-3xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                className="bg-[#0d0d1f]/50 hover:bg-[#151533]/80 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/50 w-12 h-12 sm:w-18 sm:h-18 md:w-22 md:h-22 text-base sm:text-2xl md:text-3xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
                 onTouchStart={(e) => {
                   e.preventDefault();
                   pressControl("up");
