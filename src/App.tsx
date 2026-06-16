@@ -2107,9 +2107,9 @@ export default function App() {
             </div>
 
             {/* Touch Controls - Left / Right movement */}
-            <div className="absolute bottom-1 left-1 sm:bottom-4 sm:left-4 flex gap-1.5 sm:gap-3.5 z-50">
+            <div className="absolute bottom-0.5 left-1 sm:bottom-4 sm:left-4 flex gap-1 sm:gap-3.5 z-50">
               <button
-                className="bg-[#0d0d1f]/50 hover:bg-[#151533]/80 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/40 w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 text-xs sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                className="bg-[#0d0d1f]/40 hover:bg-[#151533]/70 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/35 w-8 h-8 sm:w-16 sm:h-16 md:w-20 md:h-20 text-[10px] sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none opacity-65 active:opacity-100"
                 onTouchStart={(e) => {
                   e.preventDefault();
                   pressControl("left");
@@ -2125,7 +2125,7 @@ export default function App() {
                 ◀
               </button>
               <button
-                className="bg-[#0d0d1f]/50 hover:bg-[#151533]/80 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/40 w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 text-xs sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                className="bg-[#0d0d1f]/40 hover:bg-[#151533]/70 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/35 w-8 h-8 sm:w-16 sm:h-16 md:w-20 md:h-20 text-[10px] sm:text-base md:text-xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none opacity-65 active:opacity-100"
                 onTouchStart={(e) => {
                   e.preventDefault();
                   pressControl("right");
@@ -2143,10 +2143,10 @@ export default function App() {
             </div>
 
             {/* Touch Jump Button & Scale controls */}
-            <div className="absolute bottom-1 right-1 sm:bottom-4 sm:right-4 flex items-center gap-1.5 sm:gap-3.5 z-50">
+            <div className="absolute bottom-0.5 right-1 sm:bottom-4 sm:right-4 flex items-center gap-1 sm:gap-3.5 z-50">
               {/* Quick Level Reset Button placed on the bottom right for accessibility */}
               <button
-                className="bg-[#0d0d1f]/45 hover:bg-[#151533]/75 backdrop-blur-sm border border-accent/30 w-8 h-8 sm:w-12 sm:h-12 text-[10px] sm:text-sm font-display text-accent active:scale-90 transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                className="bg-[#0d0d1f]/35 hover:bg-[#151533]/65 backdrop-blur-sm border border-accent/25 w-[26px] h-[26px] sm:w-12 sm:h-12 text-[8px] sm:text-sm font-display text-accent active:scale-90 transition-all cursor-pointer flex items-center justify-center shadow-lg opacity-50 active:opacity-100"
                 onClick={startGame}
                 title="Resetar Jogo"
               >
@@ -2154,7 +2154,7 @@ export default function App() {
               </button>
 
               <button
-                className="bg-[#0d0d1f]/50 hover:bg-[#151533]/80 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/50 w-12 h-12 sm:w-18 sm:h-18 md:w-22 md:h-22 text-base sm:text-2xl md:text-3xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none"
+                className="bg-[#0d0d1f]/40 hover:bg-[#151533]/70 active:bg-accent active:text-accent-foreground backdrop-blur-sm border border-accent/45 w-10.5 h-10.5 sm:w-18 sm:h-18 md:w-22 md:h-22 text-xs sm:text-2xl md:text-3xl rounded-full font-display text-accent active:scale-90 transition-all touch-none flex items-center justify-center cursor-pointer shadow-xl select-none opacity-65 active:opacity-100"
                 onTouchStart={(e) => {
                   e.preventDefault();
                   pressControl("up");
