@@ -139,7 +139,36 @@ function Ki(level: number): Level {
   const loopOffset = Math.floor((level - 1) / 5) * 3;
   const speedMultiplier = 1 + Math.floor((level - 1) / 5) * 0.25;
 
-  if (baseLevel === 1) {
+  if (level === 9 || level === 11) {
+    // Tintolino Boss Stage!
+    platforms.push(
+      { x: 200, y: 760, width: 280, height: ge, color: "#2e7d32" },
+      { x: 550, y: 600, width: 280, height: ge, color: "#1b5e20", vx: 2, minX: 500, maxX: 850 },
+      { x: 920, y: 440, width: 300, height: ge, color: "#2e7d32" },
+      { x: 1300, y: 580, width: 280, height: ge, color: "#1b5e20", vy: 1.5, minY: 400, maxY: 680 }
+    );
+    paints.push(
+      { x: 300, y: 700, width: we, height: Se, color: "#ff4444", collected: false, isTintolinoPot: true },
+      { x: 1040, y: 380, width: we, height: Se, color: "#ffeb3b", collected: false, isTintolinoPot: true },
+      { x: 1400, y: 520, width: we, height: Se, color: "#4488ff", collected: false, isTintolinoPot: true }
+    );
+    monsters.push(
+      { x: 450, y: Ve - te, width: je, height: te, vx: 2 * speedMultiplier, color: "#880088", minX: 100, maxX: 800 },
+      { x: 1100, y: Ve - te, width: je, height: te, vx: 2.5 * speedMultiplier, color: "#aa0066", minX: 850, maxX: 1450 },
+      {
+        x: Et - 425,
+        y: Ve - 165,
+        width: 160,
+        height: 165,
+        vx: 0,
+        color: "#ff33aa",
+        minX: Et - 435,
+        maxX: Et - 415,
+        isTintolino: true,
+        defeated: false
+      }
+    );
+  } else if (baseLevel === 1) {
     platforms.push(
       { x: 240, y: 780, width: 280, height: ge, color: "#2e7d32" },
       { x: 600, y: 640, width: 280, height: ge, color: "#2e7d32" },
@@ -280,6 +309,7 @@ function useGameImages() {
   const playerImgRef = useRef<HTMLImageElement | null>(null);
   const playerImgFlippedRef = useRef<HTMLCanvasElement | null>(null);
   const monsterImgRef = useRef<HTMLImageElement | null>(null);
+  const tintolinoImgRef = useRef<HTMLImageElement | null>(null);
   const bgImgRef = useRef<HTMLImageElement | null>(null);
   const masterpieceImgsRef = useRef<HTMLImageElement[]>([]);
   
@@ -312,6 +342,14 @@ function useGameImages() {
       checkLoaded();
     };
 
+    const tImg = new Image();
+    tImg.crossOrigin = "anonymous";
+    tImg.src = "https://i.imgur.com/cGrnX7t.png";
+    tImg.onload = () => {
+      tintolinoImgRef.current = tImg;
+      checkLoaded();
+    };
+
     const bImg = new Image();
     bImg.src = getAssetPath("assets/game-background-new.png");
     bImg.onload = () => {
@@ -334,6 +372,7 @@ function useGameImages() {
       if (
         playerImgRef.current &&
         monsterImgRef.current &&
+        tintolinoImgRef.current &&
         bgImgRef.current &&
         allMasterpiecesLoaded
       ) {
@@ -346,6 +385,7 @@ function useGameImages() {
     playerImg: playerImgRef,
     playerImgFlipped: playerImgFlippedRef,
     monsterImg: monsterImgRef,
+    tintolinoImg: tintolinoImgRef,
     bgImg: bgImgRef,
     masterpieceImgs: masterpieceImgsRef,
     loaded: loadedRef,
@@ -719,6 +759,9 @@ function useSounds() {
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [gameState, setGameState] = useState<GameState>("opening");
+  const [childName, setChildName] = useState<string>("Artista");
+  const [score, setScore] = useState<number>(0);
+  const scoreRef = useRef<number>(0);
   const [lives, setLives] = useState<number>(Gi);
   const [paintsCollected, setPaintsCollected] = useState<number>(0);
   const [totalPaints, setTotalPaints] = useState<number>(0);
@@ -727,9 +770,12 @@ export default function App() {
   const [monstersKilledCount, setMonstersKilledCount] = useState<number>(0);
   const [auraSecondsLeft, setAuraSecondsLeft] = useState<number>(0);
   const [showAuraFlash, setShowAuraFlash] = useState<boolean>(false);
+  const [currentLevel, setCurrentLevel] = useState<number>(1);
+  const [showTintolinoAlert, setShowTintolinoAlert] = useState<boolean>(false);
+  const [showTintolinoDefeatedAlert, setShowTintolinoDefeatedAlert] = useState<boolean>(false);
 
   // Asset hooks
-  const { playerImg, playerImgFlipped, monsterImg, bgImg, masterpieceImgs } = useGameImages();
+  const { playerImg, playerImgFlipped, monsterImg, tintolinoImg, bgImg, masterpieceImgs } = useGameImages();
   const themeMusic = useBackgroundTheme();
   const sounds = useSounds();
 
@@ -841,7 +887,15 @@ export default function App() {
   const loadNextLevel = useCallback(() => {
     if (currentLevelNumberRef.current < masterpiecesList.length) {
       currentLevelNumberRef.current += 1;
-      activeLevelRef.current = Ki(currentLevelNumberRef.current);
+      const nextLvl = currentLevelNumberRef.current;
+      setCurrentLevel(nextLvl);
+      if (nextLvl === 9 || nextLvl === 11) {
+        setShowTintolinoAlert(true);
+        setTimeout(() => setShowTintolinoAlert(false), 4500);
+      } else {
+        setShowTintolinoAlert(false);
+      }
+      activeLevelRef.current = Ki(nextLvl);
       setTotalPaints(activeLevelRef.current.paints.length);
       setPaintsCollected(0);
       resetPlayer();
@@ -866,10 +920,17 @@ export default function App() {
   }, [resetPlayer]);
 
   // Launch Game
-  const startGame = useCallback(() => {
+  const startGame = useCallback((name?: string) => {
+    if (name) {
+      setChildName(name);
+    }
+    scoreRef.current = 0;
+    setScore(0);
     livesRef.current = Gi;
     setLives(Gi);
     currentLevelNumberRef.current = 1;
+    setCurrentLevel(1);
+    setShowTintolinoAlert(false);
     activeLevelRef.current = Ki(1);
     setTotalPaints(activeLevelRef.current.paints.length);
     setPaintsCollected(0);
@@ -928,6 +989,10 @@ export default function App() {
     const origY = monster.y;
     monster.x = -1000;
 
+    // Award +100 points for squashing a monster
+    scoreRef.current += 100;
+    setScore(scoreRef.current);
+
     // Squash splat particles
     spawnParticles(origX + monster.width / 2, origY + monster.height / 2, 30, "celebration", monster.color);
 
@@ -985,6 +1050,9 @@ export default function App() {
         if (curMon && curMon.x < -500) {
           return { ...initMon, x: -1000 };
         }
+        if (curMon && curMon.isTintolino) {
+          return { ...initMon, defeated: curMon.defeated };
+        }
         return initMon;
       });
 
@@ -1019,6 +1087,15 @@ export default function App() {
       camera.x = Math.max(0, Math.min(player.x - Et / 3, Et * 0.3));
 
       ctx.clearRect(0, 0, Et, vn);
+
+      const isTintolinoUndefeated = level.monsters.some((m) => m.isTintolino && !m.defeated);
+      const isGrayscaleActive = isTintolinoUndefeated;
+
+      if (isGrayscaleActive) {
+        ctx.filter = "grayscale(100%)";
+      } else {
+        ctx.filter = "none";
+      }
 
       // 1. Draw Background
       if (bgImg.current) {
@@ -1244,18 +1321,56 @@ export default function App() {
       // 4. Draw Buckets of Paints
       for (const paint of level.paints) {
         if (!paint.collected) {
-          ctx.fillStyle = paint.color;
-          ctx.beginPath();
-          ctx.roundRect(paint.x, paint.y + 5, paint.width, paint.height - 5, 4);
-          ctx.fill();
+          ctx.save();
+          if (isGrayscaleActive) {
+            ctx.filter = "none";
+          }
 
-          // Silver shiny lid
-          ctx.fillStyle = "#ddd";
-          ctx.fillRect(paint.x + 10, paint.y, 10, 10);
+          if (paint.isTintolinoPot) {
+            // Draw a special glowing paint pot
+            ctx.shadowColor = paint.color;
+            ctx.shadowBlur = 18;
+            
+            // Draw cute glass jar
+            ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(paint.x, paint.y + 5, paint.width, paint.height - 5, 12);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw colorful liquid paint inside
+            ctx.fillStyle = paint.color;
+            ctx.beginPath();
+            ctx.roundRect(paint.x + 6, paint.y + 14, paint.width - 12, paint.height - 21, 6);
+            ctx.fill();
+            
+            // Draw gold lid
+            ctx.fillStyle = "#ffd700";
+            ctx.fillRect(paint.x + paint.width / 2 - 12, paint.y, 24, 7);
+            
+            // Paint Splatter Label
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(paint.color === "#ff4444" ? "Vermelho" : paint.color === "#ffeb3b" ? "Amarelo" : "Azul", paint.x + paint.width / 2, paint.y - 4);
+          } else {
+            // Draw standard paint bucket
+            ctx.fillStyle = paint.color;
+            ctx.beginPath();
+            ctx.roundRect(paint.x, paint.y + 5, paint.width, paint.height - 5, 4);
+            ctx.fill();
 
-          // Sparkle reflection glint
-          ctx.fillStyle = "rgba(255,255,255,0.4)";
-          ctx.fillRect(paint.x + 3, paint.y + 8, 4, 10);
+            // Silver shiny lid
+            ctx.fillStyle = "#ddd";
+            ctx.fillRect(paint.x + 10, paint.y, 10, 10);
+
+            // Sparkle reflection glint
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            ctx.fillRect(paint.x + 3, paint.y + 8, 4, 10);
+          }
+          ctx.restore();
         }
       }
 
@@ -1263,32 +1378,115 @@ export default function App() {
       for (const monster of level.monsters) {
         const monsterTimeOffset = time * 8 + monster.x * 0.05;
         const bounceHeight = Math.abs(Math.sin(monsterTimeOffset)) * 4;
-        if (monsterImg.current) {
-          ctx.save();
-          // Find center for mirroring
-          const cx = monster.x + monster.width / 2;
-          ctx.translate(cx, 0);
 
-          // If moving left (vx < 0), flip horizontally.
-          // If vx > 0, render normally (default image faces right).
-          if (monster.vx < 0) {
-            ctx.scale(-1, 1);
+        if (monster.isTintolino) {
+          if (tintolinoImg.current) {
+            ctx.save();
+            ctx.translate(monster.x + monster.width / 2, 0);
+
+            // Subtle flip depending on where Candinho is
+            if (player.x < monster.x) {
+              ctx.scale(-1, 1);
+            }
+
+            const drawX = -(monster.width / 2);
+            ctx.drawImage(
+              tintolinoImg.current,
+              drawX,
+              monster.y - bounceHeight,
+              monster.width,
+              monster.height
+            );
+            ctx.restore();
+
+            // Happy celebration overlay for friendly Tintolino
+            if (monster.defeated) {
+              ctx.save();
+              ctx.translate(monster.x + monster.width / 2, monster.y + monster.height / 2);
+              const starColors = ["#ff3366", "#33ccff", "#33ff99", "#ffcc33", "#cc33ff"];
+              for (let i = 0; i < 8; i++) {
+                const angleOffset = (i * Math.PI * 2) / 8 + time * 3;
+                const radius = 95 + Math.sin(time * 10 + i) * 15;
+                const starX = Math.cos(angleOffset) * radius;
+                const starY = Math.sin(angleOffset) * radius;
+                ctx.fillStyle = starColors[i % starColors.length];
+                ctx.beginPath();
+                ctx.arc(starX, starY, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (i % 2 === 0) {
+                  ctx.font = "14px sans-serif";
+                  ctx.fillText("✨", starX - 7, starY + 5);
+                } else {
+                  ctx.font = "14px sans-serif";
+                  ctx.fillText("💛", starX - 7, starY + 5);
+                }
+              }
+              ctx.restore();
+
+              // Speech bubble
+              ctx.save();
+              ctx.fillStyle = "#fff";
+              ctx.strokeStyle = "#4ade80";
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.roundRect(monster.x - 20, monster.y - 65, monster.width + 40, 48, 12);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#1e293b";
+              ctx.font = "bold 13px sans-serif";
+              ctx.textAlign = "center";
+              ctx.fillText("Obrigado, amiguinho! 🎨🌈", monster.x + monster.width / 2, monster.y - 35);
+              ctx.restore();
+            } else {
+              // Undefeated: Draw sad help speech bubble
+              ctx.save();
+              ctx.fillStyle = "rgba(13, 13, 31, 0.88)";
+              ctx.strokeStyle = "#ef4444";
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.roundRect(monster.x - 20, monster.y - 60, monster.width + 40, 45, 12);
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.fillStyle = "#f87171";
+              ctx.font = "bold 11px sans-serif";
+              ctx.textAlign = "center";
+              ctx.fillText("Estou sem cor! Resgate as 3 tintas!", monster.x + monster.width / 2, monster.y - 32);
+              ctx.restore();
+            }
+          } else {
+            // Text fallback
+            ctx.fillStyle = monster.defeated ? "#4ade80" : "#a1a1aa";
+            ctx.beginPath();
+            ctx.roundRect(monster.x, monster.y - bounceHeight, monster.width, monster.height, 16);
+            ctx.fill();
           }
-
-          const drawX = -(monster.width / 2 + 20);
-          ctx.drawImage(
-            monsterImg.current,
-            drawX,
-            monster.y - 20 - bounceHeight,
-            monster.width + 40,
-            monster.height + 40
-          );
-          ctx.restore();
         } else {
-          ctx.fillStyle = monster.color;
-          ctx.beginPath();
-          ctx.roundRect(monster.x, monster.y - bounceHeight, monster.width, monster.height, 8);
-          ctx.fill();
+          // Standard monster drawing
+          if (monsterImg.current) {
+            ctx.save();
+            const cx = monster.x + monster.width / 2;
+            ctx.translate(cx, 0);
+            if (monster.vx < 0) {
+              ctx.scale(-1, 1);
+            }
+            const drawX = -(monster.width / 2 + 20);
+            ctx.drawImage(
+              monsterImg.current,
+              drawX,
+              monster.y - 20 - bounceHeight,
+              monster.width + 40,
+              monster.height + 40
+            );
+            ctx.restore();
+          } else {
+            ctx.fillStyle = monster.color;
+            ctx.beginPath();
+            ctx.roundRect(monster.x, monster.y - bounceHeight, monster.width, monster.height, 8);
+            ctx.fill();
+          }
         }
       }
 
@@ -1300,6 +1498,9 @@ export default function App() {
       // Glow Aura Effects for powered up Candinho (Farmando Aura)
       if (hasAuraPowerRef.current) {
         ctx.save();
+        if (isGrayscaleActive) {
+          ctx.filter = "none";
+        }
         const pulse = 10 + Math.abs(Math.sin(time * 12)) * 15;
         ctx.shadowBlur = pulse + 15;
         ctx.shadowColor = "#ffeb3b"; // Rich yellow glow
@@ -1368,6 +1569,10 @@ export default function App() {
       // 6.5 Draw Active Superpower Effects
       const actPower = activePowerRef.current;
       if (actPower.type !== "") {
+        ctx.save();
+        if (isGrayscaleActive) {
+          ctx.filter = "none";
+        }
         const px = player.x + player.width / 2;
         const py = player.y + player.height / 2;
 
@@ -1522,9 +1727,14 @@ export default function App() {
           }
           ctx.restore();
         }
+        ctx.restore();
       }
 
       // 7. Draw Splash Particles
+      ctx.save();
+      if (isGrayscaleActive) {
+        ctx.filter = "none";
+      }
       for (const p of particlesRef.current) {
         ctx.save();
         ctx.globalAlpha = p.alpha;
@@ -1546,10 +1756,11 @@ export default function App() {
         }
         ctx.restore();
       }
+      ctx.restore();
 
       ctx.restore();
     },
-    [playerImg, playerImgFlipped, monsterImg, bgImg, masterpieceImgs]
+    [playerImg, playerImgFlipped, monsterImg, tintolinoImg, bgImg, masterpieceImgs]
   );
 
   // Physics Updates and Collisions Loop
@@ -1765,6 +1976,10 @@ export default function App() {
         collectedCount++;
         sounds.playPoint();
 
+        // Award +50 points for collecting a paint pot
+        scoreRef.current += 50;
+        setScore(scoreRef.current);
+
         // 🎨 Charge superpower bar upon collection - 7 paint pots/potes fills to 100%
         if (activePowerRef.current.type === "") {
           paintPotPowerCountRef.current = Math.min(7, paintPotPowerCountRef.current + 1);
@@ -1774,6 +1989,36 @@ export default function App() {
 
         // Colorful explosion splash
         spawnParticles(paint.x + paint.width / 2, paint.y + paint.height / 2, 12, "celebration", paint.color);
+
+        // check if Tintolino is defeated because we got all 3 paints!
+        const levelPaintsAllCollected = level.paints.every((p) => p.collected);
+        if (levelPaintsAllCollected) {
+          const tintolino = level.monsters.find((m) => m.isTintolino);
+          if (tintolino && !tintolino.defeated) {
+            tintolino.defeated = true;
+            sounds.playVictory();
+
+            // Award +500 points for rescuing Tintolino!
+            scoreRef.current += 500;
+            setScore(scoreRef.current);
+
+            // Splashee color celebration paint particles!
+            const colors = ["#ff3366", "#33ccff", "#33ff99", "#ffcc33", "#cc33ff"];
+            for (let k = 0; k < 6; k++) {
+              spawnParticles(
+                tintolino.x + tintolino.width / 2,
+                tintolino.y + tintolino.height / 2,
+                15,
+                "celebration",
+                colors[k % colors.length]
+              );
+            }
+            setShowTintolinoDefeatedAlert(true);
+            setTimeout(() => {
+              setShowTintolinoDefeatedAlert(false);
+            }, 4500);
+          }
+        }
       }
     }
     setPaintsCollected(collectedCount);
@@ -1782,6 +2027,23 @@ export default function App() {
     for (const monster of level.monsters) {
       if (monster.x < -500) {
         continue; // Monster already squashed, skip
+      }
+
+      if (monster.isTintolino) {
+        if (monster.defeated) {
+          continue; // saved Tintolino is completely friendly and skipped from damage & movement updates
+        }
+        // Undefeated Tintolino is a blocking barrier
+        if (
+          player.x + player.width > monster.x + 5 &&
+          player.x < monster.x + monster.width - 5 &&
+          player.y + player.height > monster.y + 5 &&
+          player.y < monster.y + monster.height - 5
+        ) {
+          handlePlayerLostLife();
+          return;
+        }
+        continue; // undefeated Tintolino stands still and is immune to standard squashes/superpowers
       }
 
       // 💥 Checks if superpower active defeats this monster
@@ -1928,6 +2190,10 @@ export default function App() {
       player.y < goal.y + goal.height
     ) {
       if (currentLevelNumberRef.current < masterpiecesList.length) {
+        // Award level completed points
+        scoreRef.current += 200;
+        setScore(scoreRef.current);
+
         // Show painting in its beautiful, full restoration stage
         setCompletedLevel(currentLevelNumberRef.current);
         setGameState("level_completed_showcase");
@@ -1935,6 +2201,10 @@ export default function App() {
         // Level completion easel fireworks splatters
         spawnParticles(goal.x + goal.width / 2, goal.y + goal.height / 2, 50, "celebration");
       } else {
+        // Ultimate Victory! Award boss level completion bonus
+        scoreRef.current += 500;
+        setScore(scoreRef.current);
+
         setGameState("victory");
         themeMusic.stop();
         sounds.playVictory(); // 🔊 Play triumphant retro arcade victory fanfare!
@@ -2032,13 +2302,21 @@ export default function App() {
             <canvas ref={canvasRef} className="block w-full h-full" style={{ imageRendering: "auto" }} />
 
             {/* Stats Bar */}
-            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#0d0d1f]/40 hover:bg-[#0d0d1f]/90 active:bg-[#0d0d1f]/95 backdrop-blur-sm hover:backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full border border-accent/30 hover:border-accent/80 font-display text-[11px] sm:text-xs md:text-sm lg:text-base text-accent/70 hover:text-accent z-50 pointer-events-auto flex items-center gap-2 sm:gap-3.5 shadow-md hover:shadow-xl select-none opacity-40 sm:opacity-75 hover:opacity-100 active:opacity-100 transition-all duration-300">
+            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#0d0d1f]/40 hover:bg-[#0d0d1f]/90 active:bg-[#0d0d1f]/95 backdrop-blur-sm hover:backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full border border-accent/30 hover:border-accent/80 font-display text-[11px] sm:text-xs md:text-sm lg:text-base text-accent/70 hover:text-accent z-50 pointer-events-auto flex items-center gap-2 sm:gap-3 shadow-md hover:shadow-xl select-none opacity-40 sm:opacity-75 hover:opacity-100 active:opacity-100 transition-all duration-300">
               <img
                 src="https://i.imgur.com/UDl1c5j.png"
                 alt="Candinho"
                 className="w-5 h-5 sm:w-7 sm:h-7 rounded-full border border-accent/70 object-cover"
                 referrerPolicy="no-referrer"
               />
+              <span className="w-px h-3 sm:h-4 bg-accent/30" />
+              <span className="font-sans font-black text-white max-w-[65px] sm:max-w-[120px] truncate select-none uppercase tracking-wide">
+                🧑‍🎨 {childName}
+              </span>
+              <span className="w-px h-3 sm:h-4 bg-accent/30" />
+              <span className="flex items-center gap-0.5 sm:gap-1 text-yellow-300 font-sans font-black">
+                ⭐ <b className="text-white">{score}</b>
+              </span>
               <span className="w-px h-3 sm:h-4 bg-accent/30" />
               <span className="flex items-center gap-0.5 sm:gap-1">❤️ <b className="font-sans text-white">{lives}</b></span>
               <span className="w-px h-3 sm:h-4 bg-accent/30" />
@@ -2065,6 +2343,24 @@ export default function App() {
                 <span>🌟</span>
                 <span>FARMANDO AURA!</span>
                 <span>🌟</span>
+              </div>
+            )}
+
+            {/* Tintolino Descolorido alert banner */}
+            {showTintolinoAlert && (
+              <div className="absolute top-16 sm:top-20 md:top-24 left-1/2 -translate-x-1/2 bg-red-600 text-white border-2 border-red-900 rounded-full py-2 px-5 sm:py-2.5 sm:px-8 font-display font-black text-[10px] sm:text-xs md:text-sm lg:text-base shadow-2xl animate-pulse z-40 flex items-center gap-1 sm:gap-2 select-none pointer-events-none transform scale-105 sm:scale-100 text-center whitespace-nowrap">
+                <span>🎨🧟</span>
+                <span>TINTOLINO DEIXOU TUDO CINZA! COLETE OS 3 POTES!</span>
+                <span>🎨🧟</span>
+              </div>
+            )}
+
+            {/* Tintolino Defeated alert banner */}
+            {showTintolinoDefeatedAlert && (
+              <div className="absolute top-16 sm:top-20 md:top-24 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 to-blue-500 text-white border-2 border-amber-300 rounded-full py-2 px-6 sm:py-3 sm:px-10 font-display font-black text-[10px] sm:text-xs md:text-sm lg:text-base shadow-2xl animate-bounce z-40 flex items-center gap-1 sm:gap-2 select-none pointer-events-none transform scale-105 sm:scale-100 text-center whitespace-nowrap">
+                <span>✨🌈</span>
+                <span>TINTOLINO COLORIDO E AMIGÁVEL! OBRA LIBERADA!</span>
+                <span>✨🌈</span>
               </div>
             )}
 
@@ -2227,10 +2523,12 @@ export default function App() {
           {/* Overlay for Victory/Game Over */}
           {(gameState === "gameover" || gameState === "victory") && (
             <GameOverOverlay
-              onRestart={startGame}
+              onRestart={() => startGame()}
               victory={gameState === "victory"}
               paintsCollected={paintsCollected}
               totalPaints={totalPaints}
+              childName={childName}
+              score={score}
             />
           )}
         </div>

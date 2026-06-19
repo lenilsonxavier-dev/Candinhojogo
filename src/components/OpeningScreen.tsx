@@ -1,12 +1,14 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getAssetPath } from "../types";
 
 interface OpeningScreenProps {
-  onStart: () => void;
+  onStart: (name: string) => void;
 }
 
 export const OpeningScreen: React.FC<OpeningScreenProps> = ({ onStart }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [childName, setChildName] = useState<string>("");
+  const [validationError, setValidationError] = useState<string>("");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -233,6 +235,15 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ onStart }) => {
     };
   }, []);
 
+  const handleStartClick = () => {
+    const trimmed = childName.trim();
+    if (trimmed.length < 2) {
+      setValidationError("Escreva seu nome de artista para começar! 🎨");
+    } else {
+      onStart(trimmed);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-[#070714] to-[#12122b] flex items-center justify-center z-[300] select-none p-4">
       <div className="text-center w-full max-w-4xl bg-[#111126]/60 backdrop-blur-md rounded-3xl p-6 md:p-10 border-2 border-accent/20 shadow-2xl flex flex-col items-center">
@@ -265,10 +276,40 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ onStart }) => {
           🎨 ajude o Candinho a recolher tintas, passando pelos monstros removedores de cor e pinte as obras históricas de Cândido Portinari ao fim de cada fase!
         </div>
 
+        {/* Child Name Registration */}
+        <div className="w-full max-w-sm mb-6 flex flex-col items-center">
+          <label className="text-accent font-display text-[11px] sm:text-xs uppercase tracking-widest mb-2 font-black">
+            🎨 DIGITE SEU NOME DE ARTISTA PARA O RANKING:
+          </label>
+          <input
+            type="text"
+            value={childName}
+            onChange={(e) => {
+              setChildName(e.target.value);
+              if (e.target.value.trim().length >= 2) {
+                setValidationError("");
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleStartClick();
+              }
+            }}
+            maxLength={20}
+            placeholder="Ex: Pedrinho, Sofia..."
+            className="bg-[#0c0c1e] text-white font-sans text-base sm:text-lg text-center font-black px-4 py-3 rounded-2xl border-2 border-accent/40 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/20 transition-all w-full select-text"
+          />
+          {validationError && (
+            <p className="text-red-400 font-sans text-xs sm:text-sm mt-2 font-bold animate-pulse">
+              {validationError}
+            </p>
+          )}
+        </div>
+
         {/* Action Button */}
         <button
-          onClick={onStart}
-          className="bg-accent text-accent-foreground font-display text-xl md:text-3xl px-12 py-4 rounded-full border-none cursor-pointer shadow-lg active:scale-95 hover:scale-105 hover:shadow-accent/40 active:bg-accent/90 transition-all uppercase tracking-wider font-extrabold max-w-sm w-full"
+          onClick={handleStartClick}
+          className="bg-accent text-accent-foreground font-display text-xl md:text-2xl px-12 py-3.5 rounded-full border-none cursor-pointer shadow-lg active:scale-95 hover:scale-105 hover:shadow-accent/40 active:bg-accent/90 transition-all uppercase tracking-wider font-extrabold max-w-sm w-full"
         >
           Jogar Agora 🎮
         </button>

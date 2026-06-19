@@ -31,6 +31,7 @@ export interface Paint {
   height: number;
   color: string;
   collected: boolean;
+  isTintolinoPot?: boolean;
 }
 
 export interface Monster {
@@ -43,6 +44,8 @@ export interface Monster {
   minX: number;
   maxX: number;
   platformIdx?: number;
+  isTintolino?: boolean;
+  defeated?: boolean;
 }
 
 export interface Level {
