@@ -76,6 +76,12 @@ export interface Particle {
 
 export type GameState = "opening" | "playing" | "gameover" | "victory" | "level_completed_showcase";
 
+export interface LeaderboardEntry {
+  name: string;
+  score: number;
+  date: string;
+}
+
 export function getAssetPath(path: string): string {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   const baseUrl = (import.meta as any).env?.BASE_URL || '/';
@@ -84,4 +90,49 @@ export function getAssetPath(path: string): string {
   }
   return baseUrl.endsWith('/') ? `${baseUrl}${cleanPath}` : `${baseUrl}/${cleanPath}`;
 }
+
+export function getLeaderboard(): LeaderboardEntry[] {
+  try {
+    const raw = localStorage.getItem("candinho_leaderboard");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Erro ao carregar ranking:", e);
+  }
+  // Default records to mock initial friendly competition for kids
+  const defaults: LeaderboardEntry[] = [
+    { name: "Pequeno Tarsila", score: 2500, date: new Date().toLocaleDateString("pt-BR") },
+    { name: "Candinho Jr.", score: 1800, date: new Date().toLocaleDateString("pt-BR") },
+    { name: "Beatriz Artista", score: 1200, date: new Date().toLocaleDateString("pt-BR") },
+    { name: "Lucas Desenho", score: 600, date: new Date().toLocaleDateString("pt-BR") },
+  ];
+  return defaults;
+}
+
+export function saveLeaderboardScore(name: string, score: number): LeaderboardEntry[] {
+  const current = getLeaderboard();
+  const cleanName = name.trim() || "Artista";
+  const newEntry: LeaderboardEntry = {
+    name: cleanName,
+    score: score,
+    date: new Date().toLocaleDateString("pt-BR"),
+  };
+  
+  // Add new entry, sort descending, limit to top 8
+  const updated = [...current, newEntry]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+    
+  try {
+    localStorage.setItem("candinho_leaderboard", JSON.stringify(updated));
+  } catch (e) {
+    console.error("Erro ao salvar no ranking:", e);
+  }
+  return updated;
+}
+
 

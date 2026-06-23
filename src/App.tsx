@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { OpeningScreen } from "./components/OpeningScreen";
 import { GameOverOverlay } from "./components/GameOverOverlay";
-import { GameState, Level, Player, Platform, Paint, Monster, Particle, getAssetPath } from "./types";
+import { GameState, Level, Player, Platform, Paint, Monster, Particle, getAssetPath, saveLeaderboardScore } from "./types";
 
 interface Masterpiece {
   title: string;
@@ -1034,6 +1034,7 @@ export default function App() {
     setAuraSecondsLeft(0);
 
     if (livesRef.current <= 0) {
+      saveLeaderboardScore(childName, scoreRef.current);
       setGameState("gameover");
       themeMusic.stop();
       sounds.playGameOver();
@@ -2205,6 +2206,7 @@ export default function App() {
         scoreRef.current += 500;
         setScore(scoreRef.current);
 
+        saveLeaderboardScore(childName, scoreRef.current);
         setGameState("victory");
         themeMusic.stop();
         sounds.playVictory(); // 🔊 Play triumphant retro arcade victory fanfare!
